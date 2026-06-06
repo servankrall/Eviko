@@ -812,7 +812,8 @@ h2 {
   margin: 14px 0 6px;
 }
 #api-base-input,
-#gemini-key-input {
+#gemini-key-input,
+#gemini-model-select {
   width: 100%;
   border: 1.5px solid var(--line);
   border-radius: 12px;
@@ -820,6 +821,9 @@ h2 {
   font-size: 1rem;
   font-family: inherit;
   background: #fff;
+}
+#gemini-model-select {
+  margin-bottom: 4px;
 }
 .adv {
   margin-top: 14px;

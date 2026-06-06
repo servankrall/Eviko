@@ -51,13 +51,22 @@
         const e = await res.json();
         msg = e?.error?.message || "";
       } catch {}
+      const detail = msg ? ` (${msg.slice(0, 160)})` : "";
       if (res.status === 400 || res.status === 403) {
-        throw new Error("Gemini anahtarı geçersiz görünüyor. ⚙️ Ayarlar'dan kontrol edin.");
+        throw new Error(
+          "Gemini anahtarı geçersiz veya yetkisiz görünüyor. Anahtarı aistudio.google.com/apikey'den aldığından emin ol." +
+            detail
+        );
       }
       if (res.status === 429) {
-        throw new Error("Gemini ücretsiz kotası doldu, biraz sonra tekrar deneyin.");
+        throw new Error(
+          "Gemini limiti aşıldı. ⚙️ Ayarlar'dan daha yüksek ücretsiz limitli bir model seç " +
+            "(ör. gemini-2.0-flash-lite) veya 1 dakika bekle. Anahtar AI Studio'dan değilse " +
+            "ücretsiz kota 0 olabilir." +
+            detail
+        );
       }
-      throw new Error(`Gemini hatası (${res.status}). ${msg}`.trim());
+      throw new Error(`Gemini hatası (${res.status}).${detail}`);
     }
     const data = await res.json();
     const text = (data?.candidates?.[0]?.content?.parts || [])

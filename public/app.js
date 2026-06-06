@@ -603,6 +603,8 @@ function updateBadges() {
 const settingsModal = el("settings-modal");
 el("nav-settings").addEventListener("click", () => {
   el("gemini-key-input").value = localStorage.getItem("eviko_gemini_key") || "";
+  el("gemini-model-select").value =
+    localStorage.getItem("eviko_gemini_model") || "gemini-2.0-flash";
   el("api-base-input").value = localStorage.getItem("eviko_api_base") || "";
   settingsModal.classList.remove("hidden");
 });
@@ -615,6 +617,7 @@ el("settings-save").addEventListener("click", () => {
   const v = el("api-base-input").value.trim();
   if (k) localStorage.setItem("eviko_gemini_key", k);
   else localStorage.removeItem("eviko_gemini_key");
+  localStorage.setItem("eviko_gemini_model", el("gemini-model-select").value);
   if (v) localStorage.setItem("eviko_api_base", v);
   else localStorage.removeItem("eviko_api_base");
   settingsModal.classList.add("hidden");
@@ -623,8 +626,10 @@ el("settings-save").addEventListener("click", () => {
 });
 el("settings-clear").addEventListener("click", () => {
   localStorage.removeItem("eviko_gemini_key");
+  localStorage.removeItem("eviko_gemini_model");
   localStorage.removeItem("eviko_api_base");
   el("gemini-key-input").value = "";
+  el("gemini-model-select").value = "gemini-2.0-flash";
   el("api-base-input").value = "";
   checkHealth();
   toast("Ayarlar temizlendi");
