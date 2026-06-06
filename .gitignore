@@ -9,3 +9,5 @@ android/
 ios/
 .gradle/
 *.keystore
+# Sabit debug imza anahtarı (güncellemelerin düzgün kurulması için commit'lenir)
+!ci/debug.keystore

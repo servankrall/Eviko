@@ -50,6 +50,13 @@ jobs:
       - name: Web varlıklarını senkronize et
         run: npx cap sync android
 
+      # Sabit debug imza anahtarı: her derlemenin aynı imzayı kullanması sağlanır,
+      # böylece yeni APK eskisinin üstüne sorunsuz kurulur (güncelleme çalışır).
+      - name: Sabit debug imzasını kur
+        run: |
+          mkdir -p ~/.android
+          cp ci/debug.keystore ~/.android/debug.keystore
+
       - name: APK derle (debug)
         run: |
           cd android
