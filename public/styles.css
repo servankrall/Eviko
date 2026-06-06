@@ -811,7 +811,8 @@ h2 {
   font-size: 0.9rem;
   margin: 14px 0 6px;
 }
-#api-base-input {
+#api-base-input,
+#gemini-key-input {
   width: 100%;
   border: 1.5px solid var(--line);
   border-radius: 12px;
@@ -819,6 +820,15 @@ h2 {
   font-size: 1rem;
   font-family: inherit;
   background: #fff;
+}
+.adv {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.adv summary {
+  cursor: pointer;
+  padding: 4px 0;
 }
 .settings-actions {
   display: flex;

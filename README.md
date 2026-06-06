@@ -13,9 +13,11 @@ hazır bir yemeğin fotoğrafından **kalorisini** tahmin eder.
 **[➡️ eviko.apk indir](https://github.com/servankrall/Eviko/releases/latest/download/eviko.apk)**
 
 > Bu link her zaman en güncel sürüme gider. Telefonda Ayarlar → "bilinmeyen
-> kaynaklara izin ver" açıp dosyayı kur. APK'nın gerçek analiz yapması için
-> ⚙️ Ayarlar'dan sunucu adresini girmen gerekir (anahtar güvenlik için telefonda
-> değil, sunucuda durur).
+> kaynaklara izin ver" açıp dosyayı kur. İlk açılışta uygulamadaki ⚙️ **Ayarlar**'dan
+> ücretsiz **Gemini API anahtarını** gir
+> ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) — analiz
+> doğrudan cihazından çalışır, **sunucu gerekmez**. (Dilersen "Gelişmiş" bölümünden
+> kendi sunucunu da kullanabilirsin.)
 
 ---
 

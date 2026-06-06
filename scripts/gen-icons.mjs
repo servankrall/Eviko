@@ -3,32 +3,33 @@
 import sharp from "sharp";
 import { mkdir, writeFile } from "node:fs/promises";
 
-// Salata kâsesi motifi (1024x1024 koordinat sisteminde).
+// Salata kâsesi motifi (1024x1024). Salata önce çizilir; kâse üstüne çizilerek
+// salatanın alt kısmını örter, böylece yemekler kâsenin İÇİNDE durur.
 const MOTIF = `
-  <circle cx="512" cy="500" r="340" fill="#ffffff" opacity="0.10"/>
+  <circle cx="512" cy="500" r="352" fill="#ffffff" opacity="0.10"/>
 
-  <!-- salata yığını -->
-  <g transform="translate(512 470)">
-    <circle cx="0"    cy="-70" r="108" fill="#69db7c"/>
-    <circle cx="-120" cy="-10" r="96"  fill="#51cf66"/>
-    <circle cx="120"  cy="-10" r="96"  fill="#40c057"/>
-    <circle cx="-55"  cy="-35" r="82"  fill="#8ce99a"/>
-    <circle cx="62"   cy="-38" r="84"  fill="#b2f2bb"/>
-    <!-- domates -->
-    <circle cx="-18"  cy="-18" r="60"  fill="#e8590c"/>
-    <circle cx="-38"  cy="-40" r="14"  fill="#ffa94d" opacity="0.85"/>
-    <path d="M -18 -80 q 20 -24 44 -10 q -10 24 -44 12 z" fill="#2f9e44"/>
+  <!-- SALATA (kâsenin içine oturur; alt kısmı kâse tarafından örtülür) -->
+  <g>
+    <circle cx="512" cy="452" r="112" fill="#69db7c"/>
+    <circle cx="408" cy="496" r="96"  fill="#51cf66"/>
+    <circle cx="616" cy="496" r="96"  fill="#40c057"/>
+    <circle cx="462" cy="474" r="84"  fill="#8ce99a"/>
+    <circle cx="566" cy="472" r="86"  fill="#b2f2bb"/>
+    <!-- mısır vurgusu -->
+    <circle cx="424" cy="470" r="26" fill="#ffd43b"/>
     <!-- havuç dilimi -->
-    <rect x="56" y="-74" width="38" height="104" rx="16" transform="rotate(24 75 -22)" fill="#f59f00"/>
+    <rect x="598" y="452" width="40" height="112" rx="18" transform="rotate(26 618 500)" fill="#ff922b"/>
+    <!-- domates -->
+    <circle cx="512" cy="486" r="62" fill="#fa5252"/>
+    <circle cx="490" cy="462" r="15" fill="#ffc9c9" opacity="0.9"/>
+    <path d="M 512 430 q 22 -26 48 -12 q -10 26 -48 14 z" fill="#2f9e44"/>
   </g>
 
-  <!-- kâse -->
-  <g transform="translate(512 520)">
-    <path d="M -300 0 a 300 300 0 0 0 600 0 Z" fill="#fffdf7"/>
-    <ellipse cx="0" cy="0" rx="300" ry="60" fill="#ffffff"/>
-    <ellipse cx="0" cy="0" rx="300" ry="60" fill="none" stroke="#e6dfce" stroke-width="9"/>
-    <ellipse cx="0" cy="16" rx="250" ry="40" fill="#000000" opacity="0.05"/>
-  </g>
+  <!-- KÂSE (salatanın üstüne çizilir → alt yarısını örter) -->
+  <path d="M 196 520 C 196 800 828 800 828 520 Z" fill="#fffdf7" stroke="#e6dfce" stroke-width="10"/>
+  <!-- ön ağız kavisi (lip) ve hafif iç gölge -->
+  <path d="M 206 522 A 312 54 0 0 0 818 522" fill="none" stroke="#e6dfce" stroke-width="9"/>
+  <ellipse cx="512" cy="560" rx="250" ry="30" fill="#000000" opacity="0.05"/>
 `;
 
 function iconSvg(rx) {

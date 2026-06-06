@@ -149,20 +149,31 @@
       <div class="modal-card settings-card" role="dialog" aria-modal="true">
         <button id="settings-close" class="modal-close" aria-label="Kapat">×</button>
         <h2>⚙️ Ayarlar</h2>
+
+        <label class="field-label" for="gemini-key-input">🔑 Gemini API anahtarı (ücretsiz)</label>
         <p class="muted small">
-          Mobil/APK uygulamasında, Eviko sunucunuzun adresini girin. Web'de boş
-          bırakabilirsiniz.
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"
+            >aistudio.google.com/apikey</a
+          >
+          adresinden ücretsiz al ve buraya yapıştır. Anahtar yalnızca bu cihazda
+          saklanır; fotoğraflar analiz için doğrudan Google'a gönderilir.
         </p>
-        <label class="field-label" for="api-base-input">Sunucu adresi (API)</label>
-        <input
-          id="api-base-input"
-          type="url"
-          placeholder="https://eviko-sunucum.example.com"
-          autocomplete="off"
-        />
+        <input id="gemini-key-input" type="password" placeholder="AIza…" autocomplete="off" />
+
+        <details class="adv">
+          <summary class="muted small">Gelişmiş: kendi sunucunu kullan</summary>
+          <label class="field-label" for="api-base-input">Sunucu adresi (API)</label>
+          <input
+            id="api-base-input"
+            type="url"
+            placeholder="https://eviko-sunucum.example.com"
+            autocomplete="off"
+          />
+        </details>
+
         <div class="settings-actions">
-          <button id="api-base-save" class="btn btn-primary">Kaydet</button>
-          <button id="api-base-clear" class="btn btn-ghost">Temizle</button>
+          <button id="settings-save" class="btn btn-primary">Kaydet</button>
+          <button id="settings-clear" class="btn btn-ghost">Temizle</button>
         </div>
       </div>
     </div>
@@ -170,6 +181,7 @@
     <footer class="footer muted small">Eviko · Claude ile geliştirildi</footer>
 
     <script src="/config.js"></script>
+    <script src="/ai.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

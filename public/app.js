@@ -68,20 +68,27 @@ function registerServiceWorker() {
 
 async function checkHealth() {
   const banner = el("banner");
+  // Cihazda Gemini anahtarı varsa sunucuya gerek yok — her şey hazır.
+  if (useGemini()) {
+    banner.classList.add("hidden");
+    return;
+  }
   try {
     const r = await fetch(api("/api/health"));
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) throw new Error("no-server");
     const d = await r.json();
     if (d.demo) {
       banner.textContent =
-        "Demo modu: örnek veriler gösteriliyor. Kendi fotoğraflarını analiz etmek için sunucuya ücretsiz GEMINI_API_KEY ekleyin.";
+        "Demo modu: örnek veriler. Kendi fotoğraflarını analiz etmek için ⚙️ Ayarlar'dan ücretsiz Gemini API anahtarı ekleyin.";
       banner.classList.remove("hidden");
+    } else {
+      banner.classList.add("hidden");
     }
   } catch {
-    if (!apiBase()) {
-      banner.textContent =
-        "Sunucuya bağlanılamadı. Mobil uygulamada ⚙️ Ayarlar'dan sunucu adresinizi girin.";
-      banner.classList.remove("hidden");
-    }
+    banner.textContent =
+      "Başlamak için ⚙️ Ayarlar'dan ücretsiz Gemini API anahtarını ekle (aistudio.google.com/apikey).";
+    banner.classList.remove("hidden");
   }
 }
 
@@ -188,7 +195,12 @@ async function runIngredients() {
   el("loading-text").textContent = "Fotoğraf inceleniyor…";
   el("loading-sub").textContent = "Malzemeler tanınıyor ve tarifler hazırlanıyor.";
   try {
-    const data = await postImage("/api/analyze");
+    const data = useGemini()
+      ? await window.GeminiClient.analyze(selectedImage.base64, selectedImage.mediaType)
+      : await serverPost("/api/analyze", {
+          image: selectedImage.base64,
+          mediaType: selectedImage.mediaType,
+        });
     renderResults(data);
     showScreen("results");
   } catch (err) {
@@ -201,7 +213,12 @@ async function runCalories() {
   el("loading-text").textContent = "Yemek inceleniyor…";
   el("loading-sub").textContent = "Kalori ve besin değerleri hesaplanıyor.";
   try {
-    const data = await postImage("/api/calories");
+    const data = useGemini()
+      ? await window.GeminiClient.calories(selectedImage.base64, selectedImage.mediaType)
+      : await serverPost("/api/calories", {
+          image: selectedImage.base64,
+          mediaType: selectedImage.mediaType,
+        });
     renderCalories(data);
     showScreen("calories");
   } catch (err) {
@@ -209,12 +226,27 @@ async function runCalories() {
   }
 }
 
-async function postImage(path) {
-  const res = await fetch(api(path), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ image: selectedImage.base64, mediaType: selectedImage.mediaType }),
-  });
+// Cihazda Gemini anahtarı varsa doğrudan Gemini kullanılır (sunucusuz).
+function useGemini() {
+  return Boolean(window.GeminiClient && window.GeminiClient.hasKey());
+}
+
+// Sunucuya POST — yanıt JSON değilse (ör. sunucu yoksa HTML dönerse) net hata verir.
+async function serverPost(path, body) {
+  let res;
+  try {
+    res = await fetch(api(path), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Sunucuya ulaşılamadı. ⚙️ Ayarlar'dan ücretsiz Gemini API anahtarını ekleyin.");
+  }
+  const ct = res.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    throw new Error("Sunucu bulunamadı. ⚙️ Ayarlar'dan ücretsiz Gemini API anahtarını ekleyin.");
+  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "İşlem başarısız");
   return data;
@@ -338,13 +370,9 @@ async function openRecipeByTitle(title) {
     )}" tarifi hazırlanıyor…</p></div>`;
   modal.classList.remove("hidden");
   try {
-    const res = await fetch(api("/api/recipe"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, detected: detectedNames }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Tarif alınamadı");
+    const data = useGemini()
+      ? await window.GeminiClient.recipe(title, detectedNames)
+      : await serverPost("/api/recipe", { title, detected: detectedNames });
     openRecipeObject(data);
   } catch (err) {
     el("modal-body").innerHTML = `<div class="detail-loading"><p>${escapeHtml(
@@ -574,6 +602,7 @@ function updateBadges() {
 // ---- Ayarlar ----
 const settingsModal = el("settings-modal");
 el("nav-settings").addEventListener("click", () => {
+  el("gemini-key-input").value = localStorage.getItem("eviko_gemini_key") || "";
   el("api-base-input").value = localStorage.getItem("eviko_api_base") || "";
   settingsModal.classList.remove("hidden");
 });
@@ -581,19 +610,24 @@ el("settings-close").addEventListener("click", () => settingsModal.classList.add
 settingsModal.addEventListener("click", (e) => {
   if (e.target === settingsModal) settingsModal.classList.add("hidden");
 });
-el("api-base-save").addEventListener("click", () => {
+el("settings-save").addEventListener("click", () => {
+  const k = el("gemini-key-input").value.trim();
   const v = el("api-base-input").value.trim();
+  if (k) localStorage.setItem("eviko_gemini_key", k);
+  else localStorage.removeItem("eviko_gemini_key");
   if (v) localStorage.setItem("eviko_api_base", v);
   else localStorage.removeItem("eviko_api_base");
   settingsModal.classList.add("hidden");
-  el("banner").classList.add("hidden");
   checkHealth();
-  toast("Ayarlar kaydedildi");
+  toast("Ayarlar kaydedildi ✓");
 });
-el("api-base-clear").addEventListener("click", () => {
+el("settings-clear").addEventListener("click", () => {
+  localStorage.removeItem("eviko_gemini_key");
   localStorage.removeItem("eviko_api_base");
+  el("gemini-key-input").value = "";
   el("api-base-input").value = "";
-  toast("Sunucu adresi temizlendi");
+  checkHealth();
+  toast("Ayarlar temizlendi");
 });
 
 // ---- Yardımcılar ----
