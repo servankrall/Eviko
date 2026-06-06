@@ -29,9 +29,10 @@ function parseJson(message) {
 
 const PERSONA =
   "Sen Eviko adlı sıcak, pratik bir mutfak asistanısın. Kullanıcıların evindeki " +
-  "sebze ve meyvelerle yapabilecekleri kolay yemekler önerirsin. Türk ev " +
-  "mutfağına ağırlık verir, ama dünya mutfağından da çeşitli fikirler sunarsın. " +
-  "Her zaman Türkçe yanıt verirsin ve gerçekçi, uygulanabilir tarifler önerirsin.";
+  "sebze ve meyvelerle yapabilecekleri kolay yemekler önerir, hazır yemeklerin " +
+  "kalorisini tahmin edersin. Türk ev mutfağına ağırlık verir, ama dünya " +
+  "mutfağından da çeşitli fikirler sunarsın. Her zaman Türkçe yanıt verir ve " +
+  "gerçekçi, uygulanabilir bilgiler paylaşırsın.";
 
 // ---------------------------------------------------------------------------
 // 1) Fotoğraf analizi: malzemeleri tanı + birçok yemek önerisi üret
@@ -140,14 +141,14 @@ export async function analyzeImage({ imageBase64, mediaType }) {
 }
 
 // ---------------------------------------------------------------------------
-// 2) Tarif detayı: seçilen yemeğin adım adım tarifi
+// 2) Tarif detayı: seçilen yemeğin adım adım tarifi (ölçeklenebilir porsiyon)
 // ---------------------------------------------------------------------------
 
 const RECIPE_SCHEMA = {
   type: "object",
   properties: {
     title: { type: "string" },
-    servings: { type: "integer", description: "Kaç kişilik" },
+    servings: { type: "integer", description: "Tarifin temel alındığı kişi sayısı (2-4 arası)" },
     durationMinutes: { type: "integer", description: "Toplam süre (dakika)" },
     difficulty: { type: "string", enum: ["kolay", "orta", "zor"] },
     ingredients: {
@@ -156,22 +157,26 @@ const RECIPE_SCHEMA = {
         type: "object",
         properties: {
           item: { type: "string", description: "Malzeme adı" },
-          amount: { type: "string", description: "Miktarı (ör. '2 adet', '1 su bardağı')" },
+          quantity: {
+            type: "number",
+            description:
+              "Belirtilen 'servings' için sayısal miktar. 'toTaste' true ise 0 olabilir.",
+          },
+          unit: {
+            type: "string",
+            description: "Birim, ör. 'adet', 'su bardağı', 'yemek kaşığı', 'g', 'ml'. Yoksa boş.",
+          },
+          toTaste: {
+            type: "boolean",
+            description: "Miktar 'damak zevkine göre' ise true (tuz, baharat vb.)",
+          },
         },
-        required: ["item", "amount"],
+        required: ["item", "quantity", "unit", "toTaste"],
         additionalProperties: false,
       },
     },
-    steps: {
-      type: "array",
-      description: "Sıralı pişirme adımları",
-      items: { type: "string" },
-    },
-    tips: {
-      type: "array",
-      description: "Faydalı ipuçları (1-3 adet)",
-      items: { type: "string" },
-    },
+    steps: { type: "array", description: "Sıralı pişirme adımları", items: { type: "string" } },
+    tips: { type: "array", description: "Faydalı ipuçları (1-3 adet)", items: { type: "string" } },
   },
   required: ["title", "servings", "durationMinutes", "difficulty", "ingredients", "steps", "tips"],
   additionalProperties: false,
@@ -183,15 +188,14 @@ const RECIPE_SCHEMA = {
  */
 export async function getRecipe({ title, detected = [] }) {
   const elde =
-    detected.length > 0
-      ? `Evde şu malzemeler var: ${detected.join(", ")}.`
-      : "";
+    detected.length > 0 ? `Evde şu malzemeler var: ${detected.join(", ")}.` : "";
 
   const instruction =
     `"${title}" adlı yemeğin detaylı, adım adım tarifini ver. ${elde} ` +
-    "Kaç kişilik olduğunu, toplam süreyi (dakika), zorluk seviyesini, " +
-    "miktarlarıyla malzeme listesini, numaralandırılabilir net pişirme " +
-    "adımlarını ve birkaç pratik ipucu ver.";
+    "Tarifi 2-4 kişilik temel al ve bu kişi sayısını 'servings' alanına yaz. " +
+    "Malzeme miktarlarını ölçeklenebilir biçimde ver: her malzeme için sayısal " +
+    "'quantity', birim için 'unit' ve damak zevkine göre olanlar için 'toTaste' " +
+    "true olsun. Net pişirme adımları ve birkaç pratik ipucu ekle.";
 
   const message = await getClient().messages.create({
     model: MODEL,
@@ -200,6 +204,82 @@ export async function getRecipe({ title, detected = [] }) {
     system: PERSONA,
     messages: [{ role: "user", content: instruction }],
     output_config: { format: { type: "json_schema", schema: RECIPE_SCHEMA } },
+  });
+
+  return parseJson(message);
+}
+
+// ---------------------------------------------------------------------------
+// 3) Kalori analizi: hazır/pişmiş bir yemeğin fotoğrafından kalori tahmini
+// ---------------------------------------------------------------------------
+
+const CALORIE_SCHEMA = {
+  type: "object",
+  properties: {
+    dishName: { type: "string", description: "Tabaktaki yemeğin adı" },
+    summary: { type: "string", description: "Bir cümlelik kısa açıklama" },
+    totalCalories: { type: "integer", description: "Fotoğraftaki porsiyonun tahmini toplam kalorisi (kcal)" },
+    confidence: { type: "string", enum: ["yüksek", "orta", "düşük"] },
+    components: {
+      type: "array",
+      description: "Tabaktaki ana bileşenler ve tahmini kalorileri",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          emoji: { type: "string" },
+          calories: { type: "integer", description: "Bu bileşenin tahmini kalorisi (kcal)" },
+        },
+        required: ["name", "emoji", "calories"],
+        additionalProperties: false,
+      },
+    },
+    macros: {
+      type: "object",
+      properties: {
+        proteinG: { type: "integer", description: "Tahmini protein (gram)" },
+        carbsG: { type: "integer", description: "Tahmini karbonhidrat (gram)" },
+        fatG: { type: "integer", description: "Tahmini yağ (gram)" },
+      },
+      required: ["proteinG", "carbsG", "fatG"],
+      additionalProperties: false,
+    },
+    healthNote: { type: "string", description: "Kısa, faydalı bir not veya ipucu" },
+  },
+  required: ["dishName", "summary", "totalCalories", "confidence", "components", "macros", "healthNote"],
+  additionalProperties: false,
+};
+
+const CALORIE_INSTRUCTION =
+  "Bu, hazır/pişmiş bir yemek fotoğrafı. Tabaktaki yemeği tanı ve porsiyon " +
+  "büyüklüğünü fotoğraftan tahmin et. Tahmini toplam kaloriyi (kcal), ana " +
+  "bileşenlerin kalori dağılımını ve makro besinleri (protein, karbonhidrat, " +
+  "yağ — gram) ver. Bunların görsel bir tahmin olduğunu unutma; emin değilsen " +
+  "'confidence' alanını düşük tut. Fotoğrafta yemek yoksa dishName'i boş bırak.";
+
+/**
+ * Hazır yemek fotoğrafından kalori tahmini yapar.
+ * @param {{ imageBase64: string, mediaType: string }} args
+ */
+export async function analyzeCalories({ imageBase64, mediaType }) {
+  const message = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 2048,
+    thinking: { type: "adaptive" },
+    system: PERSONA,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: { type: "base64", media_type: mediaType, data: imageBase64 },
+          },
+          { type: "text", text: CALORIE_INSTRUCTION },
+        ],
+      },
+    ],
+    output_config: { format: { type: "json_schema", schema: CALORIE_SCHEMA } },
   });
 
   return parseJson(message);

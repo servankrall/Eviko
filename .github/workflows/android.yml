@@ -1,0 +1,60 @@
+name: Android APK
+
+# Eviko'yu Capacitor ile Android APK'sına derler ve indirilebilir
+# bir artefakt olarak yükler. Android SDK kurmaya gerek yok; her şey CI'da yapılır.
+
+on:
+  push:
+    branches: [main, master, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Bağımlılıkları yükle
+        run: npm ci
+
+      - name: İkon ve kapakları üret
+        run: npm run icons
+
+      - name: Java kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android SDK kur
+        uses: android-actions/setup-android@v3
+
+      - name: Android projesini oluştur
+        run: npx cap add android
+
+      - name: İkon ve splash'i Android'e işle
+        run: npx capacitor-assets generate --android
+
+      - name: Web varlıklarını senkronize et
+        run: npx cap sync android
+
+      - name: APK derle (debug)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK'yı yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: eviko-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

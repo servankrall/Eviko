@@ -14,6 +14,7 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -29,7 +30,7 @@ body {
   color: var(--ink);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
 }
 
 h1,
@@ -37,7 +38,6 @@ h2 {
   line-height: 1.25;
   margin: 0 0 0.4em;
 }
-
 .muted {
   color: var(--muted);
 }
@@ -48,39 +48,80 @@ h2 {
   display: none !important;
 }
 
-/* ---------- Banner (demo uyarısı) ---------- */
+/* ---------- Banner (demo / uyarı) ---------- */
 .banner {
   background: #fff4e6;
   color: #8a4b08;
   text-align: center;
   padding: 10px 16px;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   border-bottom: 1px solid #ffe2bf;
 }
 
 /* ---------- Üst bar ---------- */
 .topbar {
-  text-align: center;
-  padding: 22px 16px 8px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 12px) 14px 12px;
+  background: rgba(255, 253, 247, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
 }
 .brand {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 .logo {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
 }
 .brand-name {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--green-dark);
 }
-.tagline {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
+.topbar-actions {
+  display: flex;
+  gap: 4px;
+}
+.icon-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.icon-btn:hover {
+  background: var(--green-soft);
+}
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--tomato);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
 }
 
 /* ---------- Düzen ---------- */
@@ -103,17 +144,46 @@ h2 {
   }
 }
 
+/* ---------- Mod seçici ---------- */
+.mode-switch {
+  display: flex;
+  gap: 6px;
+  background: #f1f3ef;
+  border-radius: 999px;
+  padding: 5px;
+  max-width: 460px;
+  margin: 4px auto 0;
+}
+.mode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, color 0.2s;
+}
+.mode-btn.active {
+  background: #fff;
+  color: var(--green-dark);
+  box-shadow: var(--shadow);
+}
+
 /* ---------- Hero ---------- */
 .hero {
   text-align: center;
   padding: 18px 6px 8px;
 }
 .hero-emoji {
-  font-size: 2.4rem;
+  font-size: 2.2rem;
   letter-spacing: 4px;
 }
 .hero h1 {
-  font-size: 1.55rem;
+  font-size: 1.5rem;
   margin-top: 10px;
 }
 .hero .muted {
@@ -130,7 +200,7 @@ h2 {
   background: var(--green-soft);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.1s;
+  transition: border-color 0.2s, transform 0.1s;
 }
 .dropzone:active {
   transform: scale(0.99);
@@ -190,7 +260,7 @@ h2 {
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
-  transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+  transition: transform 0.1s, background 0.2s;
 }
 .btn:active {
   transform: scale(0.97);
@@ -243,12 +313,16 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
+}
+.results-head h2 {
+  margin: 0;
 }
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 26px;
+  margin: 14px 0 18px;
 }
 .chip {
   display: inline-flex;
@@ -275,6 +349,21 @@ h2 {
   border-radius: 12px;
 }
 
+.missing-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fff7ed;
+  border: 1px solid #ffe2bf;
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+  color: #8a4b08;
+}
+
 .recipes-title {
   margin-top: 6px;
 }
@@ -289,7 +378,6 @@ h2 {
     grid-template-columns: 1fr 1fr;
   }
 }
-
 .recipe-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -299,6 +387,7 @@ h2 {
   box-shadow: var(--shadow);
   transition: transform 0.12s, box-shadow 0.2s;
   text-align: left;
+  position: relative;
 }
 .recipe-card:hover {
   transform: translateY(-3px);
@@ -307,6 +396,7 @@ h2 {
 .recipe-card h3 {
   margin: 0 0 6px;
   font-size: 1.12rem;
+  padding-right: 28px;
 }
 .recipe-card .desc {
   color: var(--muted);
@@ -334,8 +424,99 @@ h2 {
   background: var(--green-soft);
   color: var(--green-dark);
 }
+.fav-star {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 1.1rem;
+  opacity: 0.85;
+}
 
-/* ---------- Modal (tarif detayı) ---------- */
+/* ---------- Kalori kartı ---------- */
+.cal-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  margin-top: 14px;
+}
+.cal-dish {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0;
+}
+.cal-summary {
+  color: var(--muted);
+  margin: 4px 0 16px;
+}
+.cal-total {
+  text-align: center;
+  background: linear-gradient(180deg, #fff5ef, #ffe8db);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.cal-total .num {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--tomato);
+  line-height: 1;
+}
+.cal-total .unit {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.macros {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.macro {
+  text-align: center;
+  background: var(--green-soft);
+  border-radius: 14px;
+  padding: 12px 6px;
+}
+.macro .mnum {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--green-dark);
+}
+.macro .mlabel {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.comp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.comp-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 2px;
+  border-bottom: 1px dashed var(--line);
+}
+.comp-list .ccal {
+  color: var(--muted);
+  font-weight: 600;
+}
+.cal-note {
+  background: var(--green-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 14px;
+  font-size: 0.9rem;
+}
+.disclaimer {
+  text-align: center;
+  margin-top: 14px;
+}
+
+/* ---------- Modal ---------- */
 .modal {
   position: fixed;
   inset: 0;
@@ -359,7 +540,7 @@ h2 {
   max-height: 90vh;
   overflow-y: auto;
   border-radius: 22px 22px 0 0;
-  padding: 26px 22px 34px;
+  padding: 26px 22px calc(34px + env(safe-area-inset-bottom));
   position: relative;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
 }
@@ -382,6 +563,7 @@ h2 {
   line-height: 1;
   cursor: pointer;
   color: var(--muted);
+  z-index: 2;
 }
 
 .recipe-detail h2 {
@@ -392,8 +574,66 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 4px 0 18px;
+  margin: 4px 0 14px;
 }
+.detail-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.detail-toolbar .btn {
+  flex: 1;
+  min-width: 140px;
+}
+.btn-fav.on {
+  background: #fff4e6;
+  border-color: #ffd8a8;
+  color: #b45309;
+}
+
+/* Porsiyon ayarı */
+.portion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--green-soft);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.portion-label {
+  font-weight: 700;
+  color: var(--green-dark);
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stepper button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  box-shadow: var(--shadow);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  cursor: pointer;
+}
+.stepper button:active {
+  transform: scale(0.94);
+}
+.stepper .count {
+  font-size: 1.2rem;
+  font-weight: 800;
+  min-width: 28px;
+  text-align: center;
+}
+
 .detail-section {
   margin-top: 20px;
 }
@@ -457,10 +697,136 @@ h2 {
 .tips li {
   margin-bottom: 6px;
 }
-
 .detail-loading {
   text-align: center;
-  padding: 30px 0;
+  padding: 40px 0;
+}
+
+/* ---------- Favoriler / liste öğeleri ---------- */
+.list-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 16px;
+}
+.fav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+.fav-item .fav-main {
+  cursor: pointer;
+  flex: 1;
+}
+.fav-item h3 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+}
+.fav-item .remove {
+  border: none;
+  background: #f1f3ef;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ---------- Alışveriş listesi ---------- */
+.shop-add {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 16px;
+}
+.shop-add input {
+  flex: 1;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 11px 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+}
+.shopping-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.shop-item .check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+}
+.shop-item.done .check {
+  background: var(--green);
+}
+.shop-item .name {
+  flex: 1;
+}
+.shop-item.done .name {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.shop-item .remove {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* ---------- Ayarlar ---------- */
+.settings-card h2 {
+  font-size: 1.3rem;
+}
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 14px 0 6px;
+}
+#api-base-input {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+}
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.settings-actions .btn {
+  flex: 1;
 }
 
 /* ---------- Footer ---------- */

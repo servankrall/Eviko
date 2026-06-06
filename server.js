@@ -3,8 +3,8 @@ import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { analyzeImage, getRecipe, hasApiKey } from "./src/claude.js";
-import { demoAnalyze, demoRecipe } from "./src/demo.js";
+import { analyzeImage, analyzeCalories, getRecipe, hasApiKey } from "./src/claude.js";
+import { demoAnalyze, demoRecipe, demoCalories } from "./src/demo.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -66,6 +66,31 @@ app.post("/api/recipe", async (req, res) => {
     console.error("Tarif hatası:", err);
     res.status(500).json({
       error: "Tarif hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
+    });
+  }
+});
+
+// Hazır yemek fotoğrafından kalori tahmini
+app.post("/api/calories", async (req, res) => {
+  try {
+    if (DEMO) {
+      return res.json({ ...demoCalories(), demo: true });
+    }
+
+    const { image, mediaType } = req.body || {};
+    if (!image) {
+      return res.status(400).json({ error: "Fotoğraf verisi (image) gerekli." });
+    }
+
+    const result = await analyzeCalories({
+      imageBase64: image,
+      mediaType: mediaType || "image/jpeg",
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("Kalori analizi hatası:", err);
+    res.status(500).json({
+      error: "Kalori tahmini yapılırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
 });

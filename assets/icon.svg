@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#40c057"/>
+        <stop offset="1" stop-color="#2b8a3e"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="1024" height="1024" rx="180" fill="url(#bg)"/>
+    
+  <circle cx="512" cy="500" r="340" fill="#ffffff" opacity="0.10"/>
+
+  <!-- salata yığını -->
+  <g transform="translate(512 470)">
+    <circle cx="0"    cy="-70" r="108" fill="#69db7c"/>
+    <circle cx="-120" cy="-10" r="96"  fill="#51cf66"/>
+    <circle cx="120"  cy="-10" r="96"  fill="#40c057"/>
+    <circle cx="-55"  cy="-35" r="82"  fill="#8ce99a"/>
+    <circle cx="62"   cy="-38" r="84"  fill="#b2f2bb"/>
+    <!-- domates -->
+    <circle cx="-18"  cy="-18" r="60"  fill="#e8590c"/>
+    <circle cx="-38"  cy="-40" r="14"  fill="#ffa94d" opacity="0.85"/>
+    <path d="M -18 -80 q 20 -24 44 -10 q -10 24 -44 12 z" fill="#2f9e44"/>
+    <!-- havuç dilimi -->
+    <rect x="56" y="-74" width="38" height="104" rx="16" transform="rotate(24 75 -22)" fill="#f59f00"/>
+  </g>
+
+  <!-- kâse -->
+  <g transform="translate(512 520)">
+    <path d="M -300 0 a 300 300 0 0 0 600 0 Z" fill="#fffdf7"/>
+    <ellipse cx="0" cy="0" rx="300" ry="60" fill="#ffffff"/>
+    <ellipse cx="0" cy="0" rx="300" ry="60" fill="none" stroke="#e6dfce" stroke-width="9"/>
+    <ellipse cx="0" cy="16" rx="250" ry="40" fill="#000000" opacity="0.05"/>
+  </g>
+
+  </svg>

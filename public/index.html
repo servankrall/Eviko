@@ -2,36 +2,53 @@
 <html lang="tr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Eviko · Evdeki sebzelerle ne pişirsem?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+    <title>Eviko · Evdeki sebzelerle ne pişsem?</title>
     <meta
       name="description"
-      content="Evdeki sebze ve meyvelerin fotoğrafını çek; Eviko sana yapabileceğin pratik yemekleri önersin."
+      content="Evdeki sebze ve meyvelerin fotoğrafını çek; Eviko sana pratik yemekler önersin, kalorisini söylesin."
     />
+    <meta name="theme-color" content="#2f9e44" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Eviko" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icons/favicon-64.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="/styles.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>"
-    />
   </head>
   <body>
     <div id="banner" class="banner hidden"></div>
 
     <header class="topbar">
-      <div class="brand">
+      <button class="brand" id="brand-home" aria-label="Ana sayfa">
         <span class="logo">🥗</span>
         <span class="brand-name">Eviko</span>
+      </button>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="nav-favorites" aria-label="Favoriler" title="Favoriler">
+          ⭐<span class="badge hidden" id="badge-fav">0</span>
+        </button>
+        <button class="icon-btn" id="nav-shopping" aria-label="Alışveriş listesi" title="Alışveriş listesi">
+          🛒<span class="badge hidden" id="badge-shop">0</span>
+        </button>
+        <button class="icon-btn" id="nav-settings" aria-label="Ayarlar" title="Ayarlar">⚙️</button>
       </div>
-      <p class="tagline">Evdeki sebzelerle ne pişirsem?</p>
     </header>
 
     <main id="app">
       <!-- 1) Fotoğraf seçme / çekme -->
       <section id="screen-capture" class="screen">
+        <div class="mode-switch" role="tablist">
+          <button class="mode-btn active" id="mode-ingredients" role="tab">🥕 Malzemelerim</button>
+          <button class="mode-btn" id="mode-dish" role="tab">🍽️ Tabaktaki yemek</button>
+        </div>
+
         <div class="hero">
-          <div class="hero-emoji">📸🥕🍅</div>
-          <h1>Sebzelerinin fotoğrafını çek</h1>
-          <p class="muted">
+          <div class="hero-emoji" id="hero-emoji">📸🥕🍅</div>
+          <h1 id="hero-title">Sebzelerinin fotoğrafını çek</h1>
+          <p class="muted" id="hero-text">
             Evdeki sebze ve meyveleri bir araya getir, fotoğrafını çek. Eviko
             onları tanıyıp sana <strong>birçok pratik yemek</strong> önersin.
           </p>
@@ -60,11 +77,11 @@
         <div class="loader">
           <div class="pan">🍳</div>
           <p id="loading-text">Fotoğraf inceleniyor…</p>
-          <p class="muted small">Malzemeler tanınıyor ve tarifler hazırlanıyor.</p>
+          <p class="muted small" id="loading-sub">Malzemeler tanınıyor ve tarifler hazırlanıyor.</p>
         </div>
       </section>
 
-      <!-- 3) Sonuçlar -->
+      <!-- 3) Sonuçlar (malzeme modu) -->
       <section id="screen-results" class="screen hidden">
         <div class="results-head">
           <h2>Tanınan malzemeler</h2>
@@ -72,9 +89,50 @@
         </div>
         <div id="detected" class="chips"></div>
 
+        <div id="missing-bar" class="missing-bar hidden">
+          <span id="missing-text"></span>
+          <button id="btn-add-missing" class="btn btn-ghost small">🛒 Listeye ekle</button>
+        </div>
+
         <h2 class="recipes-title">Yapabileceğin yemekler</h2>
         <p class="muted small">Bir yemeğe dokun, adım adım tarifini görelim.</p>
         <div id="recipes" class="recipe-grid"></div>
+      </section>
+
+      <!-- 4) Kalori (tabak modu) -->
+      <section id="screen-calories" class="screen hidden">
+        <div class="results-head">
+          <h2>Kalori tahmini</h2>
+          <button id="btn-new-2" class="btn btn-ghost small">Yeni fotoğraf</button>
+        </div>
+        <div id="calorie-card"></div>
+        <p class="muted small disclaimer">
+          ⚠️ Bu değerler fotoğrafa dayalı bir tahmindir; gerçek değerler porsiyon
+          ve pişirme yöntemine göre değişebilir.
+        </p>
+      </section>
+
+      <!-- 5) Favoriler -->
+      <section id="screen-favorites" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>⭐ Favori tariflerim</h2>
+        </div>
+        <div id="favorites-list"></div>
+      </section>
+
+      <!-- 6) Alışveriş listesi -->
+      <section id="screen-shopping" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>🛒 Alışveriş listesi</h2>
+        </div>
+        <form id="shop-add-form" class="shop-add">
+          <input id="shop-add-input" type="text" placeholder="Malzeme ekle…" autocomplete="off" />
+          <button class="btn btn-primary small" type="submit">Ekle</button>
+        </form>
+        <ul id="shopping-list" class="shopping-list"></ul>
+        <button id="btn-clear-shop" class="btn btn-ghost small hidden">Tümünü temizle</button>
       </section>
     </main>
 
@@ -86,10 +144,32 @@
       </div>
     </div>
 
-    <footer class="footer muted small">
-      Eviko · Claude ile geliştirildi
-    </footer>
+    <!-- Ayarlar -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="settings-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>⚙️ Ayarlar</h2>
+        <p class="muted small">
+          Mobil/APK uygulamasında, Eviko sunucunuzun adresini girin. Web'de boş
+          bırakabilirsiniz.
+        </p>
+        <label class="field-label" for="api-base-input">Sunucu adresi (API)</label>
+        <input
+          id="api-base-input"
+          type="url"
+          placeholder="https://eviko-sunucum.example.com"
+          autocomplete="off"
+        />
+        <div class="settings-actions">
+          <button id="api-base-save" class="btn btn-primary">Kaydet</button>
+          <button id="api-base-clear" class="btn btn-ghost">Temizle</button>
+        </div>
+      </div>
+    </div>
 
+    <footer class="footer muted small">Eviko · Claude ile geliştirildi</footer>
+
+    <script src="/config.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

@@ -1,48 +1,123 @@
-// ---- Eviko ön yüz mantığı ----
+// ===== Eviko ön yüz mantığı =====
 
 const el = (id) => document.getElementById(id);
-
 const screens = {
   capture: el("screen-capture"),
   loading: el("screen-loading"),
   results: el("screen-results"),
+  calories: el("screen-calories"),
+  favorites: el("screen-favorites"),
+  shopping: el("screen-shopping"),
 };
 
-const fileInput = el("file-input");
-const previewWrap = el("preview-wrap");
-const previewImg = el("preview");
-
+// ---- Durum ----
+let mode = "ingredients"; // "ingredients" | "dish"
 let selectedImage = null; // { base64, mediaType }
-let detectedNames = []; // tarif istemek için malzeme adları
+let detectedNames = [];
+let currentRecipe = null; // açık olan tarif (detay)
+let currentServings = 2; // porsiyon ayarı
+let lastMainScreen = "capture"; // favoriler/listeden geri dönüş için
 
+// ---- Kalıcı depolama ----
+const store = {
+  get(key, fallback) {
+    try {
+      return JSON.parse(localStorage.getItem(key)) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  },
+  set(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch {}
+  },
+};
+let favorites = store.get("eviko_favorites", []);
+let shopping = store.get("eviko_shopping", []);
+
+// ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
+function apiBase() {
+  return (localStorage.getItem("eviko_api_base") || window.EVIKO_API_BASE || "").replace(/\/$/, "");
+}
+function api(path) {
+  return apiBase() + path;
+}
+
+// ---- Ekran geçişi ----
 function showScreen(name) {
   Object.values(screens).forEach((s) => s.classList.add("hidden"));
   screens[name].classList.remove("hidden");
+  if (["capture", "results", "calories"].includes(name)) lastMainScreen = name;
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ---- Demo modu kontrolü ----
-fetch("/api/health")
-  .then((r) => r.json())
-  .then((d) => {
+// ---- Başlangıç: sağlık kontrolü + rozetler ----
+init();
+function init() {
+  registerServiceWorker();
+  updateBadges();
+  checkHealth();
+}
+
+function registerServiceWorker() {
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+}
+
+async function checkHealth() {
+  const banner = el("banner");
+  try {
+    const r = await fetch(api("/api/health"));
+    const d = await r.json();
     if (d.demo) {
-      const b = el("banner");
-      b.textContent =
-        "Demo modu: API anahtarı yok, örnek veriler gösteriliyor. Gerçek analiz için .env dosyasına ANTHROPIC_API_KEY ekleyin.";
-      b.classList.remove("hidden");
+      banner.textContent =
+        "Demo modu: API anahtarı yok, örnek veriler gösteriliyor. Gerçek analiz için sunucuya ANTHROPIC_API_KEY ekleyin.";
+      banner.classList.remove("hidden");
     }
-  })
-  .catch(() => {});
+  } catch {
+    if (!apiBase()) {
+      banner.textContent =
+        "Sunucuya bağlanılamadı. Mobil uygulamada ⚙️ Ayarlar'dan sunucu adresinizi girin.";
+      banner.classList.remove("hidden");
+    }
+  }
+}
+
+// ---- Mod seçici ----
+el("mode-ingredients").addEventListener("click", () => setMode("ingredients"));
+el("mode-dish").addEventListener("click", () => setMode("dish"));
+
+function setMode(m) {
+  mode = m;
+  el("mode-ingredients").classList.toggle("active", m === "ingredients");
+  el("mode-dish").classList.toggle("active", m === "dish");
+  if (m === "ingredients") {
+    el("hero-emoji").textContent = "📸🥕🍅";
+    el("hero-title").textContent = "Sebzelerinin fotoğrafını çek";
+    el("hero-text").innerHTML =
+      "Evdeki sebze ve meyveleri bir araya getir, fotoğrafını çek. Eviko onları tanıyıp sana <strong>birçok pratik yemek</strong> önersin.";
+    el("btn-analyze").textContent = "Yemekleri bul";
+  } else {
+    el("hero-emoji").textContent = "🍽️🔥";
+    el("hero-title").textContent = "Tabaktaki yemeğin fotoğrafını çek";
+    el("hero-text").innerHTML =
+      "Hazır bir yemeğin fotoğrafını çek; Eviko <strong>tahmini kalorisini</strong> ve besin değerlerini söylesin.";
+    el("btn-analyze").textContent = "Kaloriyi hesapla";
+  }
+}
 
 // ---- Fotoğraf seçme + küçültme ----
+const fileInput = el("file-input");
 fileInput.addEventListener("change", async (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   try {
     selectedImage = await resizeImage(file);
-    previewImg.src = `data:${selectedImage.mediaType};base64,${selectedImage.base64}`;
+    el("preview").src = `data:${selectedImage.mediaType};base64,${selectedImage.base64}`;
     el("dropzone").classList.add("hidden");
-    previewWrap.classList.remove("hidden");
+    el("preview-wrap").classList.remove("hidden");
   } catch (err) {
     alert("Fotoğraf okunamadı. Lütfen başka bir görsel deneyin.");
     console.error(err);
@@ -54,17 +129,23 @@ el("btn-new").addEventListener("click", () => {
   resetCapture();
   showScreen("capture");
 });
+el("btn-new-2").addEventListener("click", () => {
+  resetCapture();
+  showScreen("capture");
+});
+el("brand-home").addEventListener("click", () => {
+  resetCapture();
+  showScreen("capture");
+});
 
 function resetCapture() {
   selectedImage = null;
   fileInput.value = "";
-  previewImg.src = "";
-  previewWrap.classList.add("hidden");
+  el("preview").src = "";
+  el("preview-wrap").classList.add("hidden");
   el("dropzone").classList.remove("hidden");
 }
 
-// Görseli tarayıcıda en uzun kenarı ~1280px olacak şekilde küçültüp
-// JPEG base64'e çevirir (yükleme hızını ve boyutu düşürür).
 function resizeImage(file, maxEdge = 1280, quality = 0.82) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -96,33 +177,56 @@ function resizeImage(file, maxEdge = 1280, quality = 0.82) {
   });
 }
 
-// ---- Analiz ----
-el("btn-analyze").addEventListener("click", async () => {
+// ---- Analiz (moda göre) ----
+el("btn-analyze").addEventListener("click", () => {
   if (!selectedImage) return;
+  mode === "ingredients" ? runIngredients() : runCalories();
+});
+
+async function runIngredients() {
   showScreen("loading");
   el("loading-text").textContent = "Fotoğraf inceleniyor…";
-
+  el("loading-sub").textContent = "Malzemeler tanınıyor ve tarifler hazırlanıyor.";
   try {
-    const res = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: selectedImage.base64,
-        mediaType: selectedImage.mediaType,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Analiz başarısız");
+    const data = await postImage("/api/analyze");
     renderResults(data);
     showScreen("results");
   } catch (err) {
-    console.error(err);
-    alert(err.message || "Bir hata oluştu. Lütfen tekrar deneyin.");
-    showScreen("capture");
+    fail(err);
   }
-});
+}
 
-// ---- Sonuçları çiz ----
+async function runCalories() {
+  showScreen("loading");
+  el("loading-text").textContent = "Yemek inceleniyor…";
+  el("loading-sub").textContent = "Kalori ve besin değerleri hesaplanıyor.";
+  try {
+    const data = await postImage("/api/calories");
+    renderCalories(data);
+    showScreen("calories");
+  } catch (err) {
+    fail(err);
+  }
+}
+
+async function postImage(path) {
+  const res = await fetch(api(path), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: selectedImage.base64, mediaType: selectedImage.mediaType }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "İşlem başarısız");
+  return data;
+}
+
+function fail(err) {
+  console.error(err);
+  alert(err.message || "Bir hata oluştu. Lütfen tekrar deneyin.");
+  showScreen("capture");
+}
+
+// ---- Sonuçları çiz (malzeme modu) ----
 function renderResults(data) {
   const detected = data.detected || [];
   detectedNames = detected.map((d) => d.name);
@@ -134,106 +238,173 @@ function renderResults(data) {
   } else {
     chips.innerHTML = detected
       .map(
-        (d) => `
-        <span class="chip">
-          <span>${d.emoji || "🥬"}</span>
-          <span>${escapeHtml(d.name)}</span>
-          <span class="conf">${escapeHtml(d.confidence || "")}</span>
-        </span>`
+        (d) =>
+          `<span class="chip"><span>${d.emoji || "🥬"}</span><span>${escapeHtml(
+            d.name
+          )}</span><span class="conf">${escapeHtml(d.confidence || "")}</span></span>`
       )
       .join("");
   }
 
   const recipes = data.recipes || [];
+
+  // Eksik malzemeler (alışveriş listesi için)
+  const missing = [...new Set(recipes.flatMap((r) => r.missingCommonIngredients || []))];
+  const missingBar = el("missing-bar");
+  if (missing.length > 0) {
+    el("missing-text").textContent = `Eksik olabilecek ${missing.length} malzeme bulundu.`;
+    missingBar.classList.remove("hidden");
+    el("btn-add-missing").onclick = () => {
+      addToShopping(missing);
+      toast("Eksik malzemeler listeye eklendi 🛒");
+    };
+  } else {
+    missingBar.classList.add("hidden");
+  }
+
   const grid = el("recipes");
   grid.innerHTML = recipes
     .map((r, i) => {
-      const diffClass = r.difficulty === "kolay" ? "easy" : "";
+      const fav = isFavorite(r.title) ? '<span class="fav-star">⭐</span>' : "";
       return `
       <button class="recipe-card" data-index="${i}">
+        ${fav}
         <h3>${escapeHtml(r.title)}</h3>
         <p class="desc">${escapeHtml(r.description || "")}</p>
         <div class="recipe-meta">
           ${r.category ? `<span class="tag cat">${escapeHtml(r.category)}</span>` : ""}
           ${r.durationMinutes ? `<span class="tag">⏱ ${r.durationMinutes} dk</span>` : ""}
-          ${r.difficulty ? `<span class="tag ${diffClass}">${escapeHtml(r.difficulty)}</span>` : ""}
+          ${r.difficulty ? `<span class="tag ${r.difficulty === "kolay" ? "easy" : ""}">${escapeHtml(r.difficulty)}</span>` : ""}
         </div>
       </button>`;
     })
     .join("");
 
   grid.querySelectorAll(".recipe-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const r = recipes[Number(card.dataset.index)];
-      openRecipe(r.title);
-    });
+    card.addEventListener("click", () => openRecipeByTitle(recipes[Number(card.dataset.index)].title));
   });
+}
+
+// ---- Kalori kartı ----
+function renderCalories(data) {
+  const card = el("calorie-card");
+  if (!data.dishName) {
+    card.innerHTML =
+      '<div class="empty-note">Fotoğrafta bir yemek tanıyamadık. Tabağı daha net gösteren bir fotoğraf deneyebilirsin.</div>';
+    return;
+  }
+  const comps = (data.components || [])
+    .map(
+      (c) =>
+        `<li><span>${c.emoji || "🍽️"} ${escapeHtml(c.name)}</span><span class="ccal">${c.calories} kcal</span></li>`
+    )
+    .join("");
+  const m = data.macros || {};
+  card.innerHTML = `
+    <div class="cal-card">
+      <p class="cal-dish">${escapeHtml(data.dishName)}</p>
+      <p class="cal-summary">${escapeHtml(data.summary || "")}</p>
+      <div class="cal-total">
+        <div><span class="num">${data.totalCalories}</span> <span class="unit">kcal</span></div>
+        <div class="muted small">tahmini · güven: ${escapeHtml(data.confidence || "-")}</div>
+      </div>
+      <div class="macros">
+        <div class="macro"><div class="mnum">${m.proteinG ?? "-"}g</div><div class="mlabel">Protein</div></div>
+        <div class="macro"><div class="mnum">${m.carbsG ?? "-"}g</div><div class="mlabel">Karbonhidrat</div></div>
+        <div class="macro"><div class="mnum">${m.fatG ?? "-"}g</div><div class="mlabel">Yağ</div></div>
+      </div>
+      ${comps ? `<h4 class="muted small">Bileşenler</h4><ul class="comp-list">${comps}</ul>` : ""}
+      ${data.healthNote ? `<div class="cal-note">💡 ${escapeHtml(data.healthNote)}</div>` : ""}
+    </div>`;
 }
 
 // ---- Tarif detayı (modal) ----
 const modal = el("modal");
-el("modal-close").addEventListener("click", closeModal);
+el("modal-close").addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", (e) => {
-  if (e.target === modal) closeModal();
+  if (e.target === modal) modal.classList.add("hidden");
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeModal();
+  if (e.key === "Escape") {
+    modal.classList.add("hidden");
+    el("settings-modal").classList.add("hidden");
+  }
 });
 
-function closeModal() {
-  modal.classList.add("hidden");
-}
-
-async function openRecipe(title) {
+async function openRecipeByTitle(title) {
   el("modal-body").innerHTML = `
-    <div class="detail-loading">
-      <div class="pan">🍲</div>
-      <p>"${escapeHtml(title)}" tarifi hazırlanıyor…</p>
-    </div>`;
+    <div class="detail-loading"><div class="pan">🍲</div><p>"${escapeHtml(
+      title
+    )}" tarifi hazırlanıyor…</p></div>`;
   modal.classList.remove("hidden");
-
   try {
-    const res = await fetch("/api/recipe", {
+    const res = await fetch(api("/api/recipe"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, detected: detectedNames }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Tarif alınamadı");
-    renderRecipe(data);
+    openRecipeObject(data);
   } catch (err) {
-    console.error(err);
-    el("modal-body").innerHTML = `
-      <div class="detail-loading">
-        <p>${escapeHtml(err.message || "Tarif yüklenemedi.")}</p>
-      </div>`;
+    el("modal-body").innerHTML = `<div class="detail-loading"><p>${escapeHtml(
+      err.message || "Tarif yüklenemedi."
+    )}</p></div>`;
   }
 }
 
-function renderRecipe(r) {
+function openRecipeObject(recipe) {
+  currentRecipe = recipe;
+  currentServings = recipe.servings || 2;
+  modal.classList.remove("hidden");
+  renderRecipeDetail();
+}
+
+function renderRecipeDetail() {
+  const r = currentRecipe;
+  const base = r.servings || 2;
+  const factor = currentServings / base;
+
   const ingredients = (r.ingredients || [])
-    .map(
-      (ing) =>
-        `<li><span>${escapeHtml(ing.item)}</span><span class="amount">${escapeHtml(
-          ing.amount || ""
-        )}</span></li>`
-    )
+    .map((ing) => {
+      let amount;
+      if (ing.toTaste) amount = "damak zevkine göre";
+      else if (ing.quantity > 0) amount = `${formatQty(ing.quantity * factor)} ${ing.unit || ""}`.trim();
+      else amount = ing.unit || "—";
+      return `<li><span>${escapeHtml(ing.item)}</span><span class="amount">${escapeHtml(amount)}</span></li>`;
+    })
     .join("");
 
   const steps = (r.steps || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("");
   const tips = (r.tips || []).map((t) => `<li>${escapeHtml(t)}</li>`).join("");
+  const favOn = isFavorite(r.title);
 
   el("modal-body").innerHTML = `
     <div class="recipe-detail">
       <h2>${escapeHtml(r.title)}</h2>
       <div class="detail-meta">
-        ${r.servings ? `<span class="tag">🍽 ${r.servings} kişilik</span>` : ""}
         ${r.durationMinutes ? `<span class="tag">⏱ ${r.durationMinutes} dk</span>` : ""}
         ${r.difficulty ? `<span class="tag easy">${escapeHtml(r.difficulty)}</span>` : ""}
       </div>
 
+      <div class="portion">
+        <span class="portion-label">🍽 Porsiyon</span>
+        <div class="stepper">
+          <button id="serv-minus" aria-label="Azalt">−</button>
+          <span class="count" id="serv-count">${currentServings}</span>
+          <button id="serv-plus" aria-label="Artır">+</button>
+        </div>
+      </div>
+
+      <div class="detail-toolbar">
+        <button class="btn btn-ghost btn-fav ${favOn ? "on" : ""}" id="btn-fav">
+          ${favOn ? "⭐ Favorilerde" : "☆ Favorilere ekle"}
+        </button>
+        <button class="btn btn-ghost" id="btn-to-shop">🛒 Malzemeleri ekle</button>
+      </div>
+
       <div class="detail-section">
-        <h4>Malzemeler</h4>
+        <h4>Malzemeler${currentServings !== base ? ` (${currentServings} kişilik)` : ""}</h4>
         <ul class="ingredient-list">${ingredients}</ul>
       </div>
 
@@ -244,23 +415,212 @@ function renderRecipe(r) {
 
       ${
         tips
-          ? `<div class="detail-section">
-               <div class="tips">
-                 <strong>İpuçları</strong>
-                 <ul>${tips}</ul>
-               </div>
-             </div>`
+          ? `<div class="detail-section"><div class="tips"><strong>İpuçları</strong><ul>${tips}</ul></div></div>`
           : ""
       }
     </div>`;
+
+  el("serv-minus").onclick = () => changeServings(-1);
+  el("serv-plus").onclick = () => changeServings(1);
+  el("btn-fav").onclick = () => {
+    toggleFavorite(r);
+    renderRecipeDetail();
+  };
+  el("btn-to-shop").onclick = () => {
+    const items = (r.ingredients || []).filter((i) => !i.toTaste).map((i) => i.item);
+    addToShopping(items);
+    toast("Malzemeler listeye eklendi 🛒");
+  };
   modal.querySelector(".modal-card").scrollTop = 0;
 }
 
-// ---- Yardımcı ----
+function changeServings(delta) {
+  currentServings = Math.min(20, Math.max(1, currentServings + delta));
+  renderRecipeDetail();
+}
+
+// ---- Favoriler ----
+function isFavorite(title) {
+  return favorites.some((f) => f.title === title);
+}
+function toggleFavorite(recipe) {
+  if (isFavorite(recipe.title)) {
+    favorites = favorites.filter((f) => f.title !== recipe.title);
+  } else {
+    favorites.push(recipe);
+  }
+  store.set("eviko_favorites", favorites);
+  updateBadges();
+}
+function renderFavorites() {
+  const list = el("favorites-list");
+  if (favorites.length === 0) {
+    list.innerHTML = '<div class="list-empty">Henüz favori tarifin yok.<br>Bir tarifi açıp ⭐ ile kaydedebilirsin.</div>';
+    return;
+  }
+  list.innerHTML = favorites
+    .map(
+      (f, i) => `
+      <div class="fav-item">
+        <div class="fav-main" data-index="${i}">
+          <h3>${escapeHtml(f.title)}</h3>
+          <div class="muted small">${f.durationMinutes ? `⏱ ${f.durationMinutes} dk · ` : ""}${escapeHtml(f.difficulty || "")}</div>
+        </div>
+        <button class="remove" data-remove="${i}" aria-label="Kaldır">🗑️</button>
+      </div>`
+    )
+    .join("");
+  list.querySelectorAll(".fav-main").forEach((m) =>
+    m.addEventListener("click", () => openRecipeObject(favorites[Number(m.dataset.index)]))
+  );
+  list.querySelectorAll("[data-remove]").forEach((b) =>
+    b.addEventListener("click", () => {
+      favorites.splice(Number(b.dataset.remove), 1);
+      store.set("eviko_favorites", favorites);
+      updateBadges();
+      renderFavorites();
+    })
+  );
+}
+
+// ---- Alışveriş listesi ----
+function addToShopping(names) {
+  const existing = new Set(shopping.map((s) => s.name.toLocaleLowerCase("tr")));
+  names.forEach((n) => {
+    const name = String(n).trim();
+    if (name && !existing.has(name.toLocaleLowerCase("tr"))) {
+      shopping.push({ name, checked: false });
+      existing.add(name.toLocaleLowerCase("tr"));
+    }
+  });
+  store.set("eviko_shopping", shopping);
+  updateBadges();
+}
+function renderShopping() {
+  const list = el("shopping-list");
+  el("btn-clear-shop").classList.toggle("hidden", shopping.length === 0);
+  if (shopping.length === 0) {
+    list.innerHTML = '<div class="list-empty">Listen boş.<br>Tariflerden veya yukarıdan malzeme ekleyebilirsin.</div>';
+    return;
+  }
+  list.innerHTML = shopping
+    .map(
+      (it, i) => `
+      <li class="shop-item ${it.checked ? "done" : ""}">
+        <span class="check" data-check="${i}">${it.checked ? "✓" : ""}</span>
+        <span class="name">${escapeHtml(it.name)}</span>
+        <button class="remove" data-del="${i}" aria-label="Sil">×</button>
+      </li>`
+    )
+    .join("");
+  list.querySelectorAll("[data-check]").forEach((c) =>
+    c.addEventListener("click", () => {
+      const i = Number(c.dataset.check);
+      shopping[i].checked = !shopping[i].checked;
+      store.set("eviko_shopping", shopping);
+      renderShopping();
+    })
+  );
+  list.querySelectorAll("[data-del]").forEach((b) =>
+    b.addEventListener("click", () => {
+      shopping.splice(Number(b.dataset.del), 1);
+      store.set("eviko_shopping", shopping);
+      updateBadges();
+      renderShopping();
+    })
+  );
+}
+el("shop-add-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = el("shop-add-input");
+  if (input.value.trim()) {
+    addToShopping([input.value]);
+    input.value = "";
+    renderShopping();
+  }
+});
+el("btn-clear-shop").addEventListener("click", () => {
+  if (confirm("Tüm liste silinsin mi?")) {
+    shopping = [];
+    store.set("eviko_shopping", shopping);
+    updateBadges();
+    renderShopping();
+  }
+});
+
+// ---- Üst bar gezinme ----
+el("nav-favorites").addEventListener("click", () => {
+  renderFavorites();
+  showScreen("favorites");
+});
+el("nav-shopping").addEventListener("click", () => {
+  renderShopping();
+  showScreen("shopping");
+});
+document.querySelectorAll("[data-back]").forEach((b) =>
+  b.addEventListener("click", () => showScreen(lastMainScreen))
+);
+
+function updateBadges() {
+  const f = el("badge-fav");
+  const s = el("badge-shop");
+  f.textContent = favorites.length;
+  f.classList.toggle("hidden", favorites.length === 0);
+  const pending = shopping.filter((x) => !x.checked).length;
+  s.textContent = pending;
+  s.classList.toggle("hidden", pending === 0);
+}
+
+// ---- Ayarlar ----
+const settingsModal = el("settings-modal");
+el("nav-settings").addEventListener("click", () => {
+  el("api-base-input").value = localStorage.getItem("eviko_api_base") || "";
+  settingsModal.classList.remove("hidden");
+});
+el("settings-close").addEventListener("click", () => settingsModal.classList.add("hidden"));
+settingsModal.addEventListener("click", (e) => {
+  if (e.target === settingsModal) settingsModal.classList.add("hidden");
+});
+el("api-base-save").addEventListener("click", () => {
+  const v = el("api-base-input").value.trim();
+  if (v) localStorage.setItem("eviko_api_base", v);
+  else localStorage.removeItem("eviko_api_base");
+  settingsModal.classList.add("hidden");
+  el("banner").classList.add("hidden");
+  checkHealth();
+  toast("Ayarlar kaydedildi");
+});
+el("api-base-clear").addEventListener("click", () => {
+  localStorage.removeItem("eviko_api_base");
+  el("api-base-input").value = "";
+  toast("Sunucu adresi temizlendi");
+});
+
+// ---- Yardımcılar ----
+function formatQty(n) {
+  const rounded = Math.round(n * 100) / 100;
+  return String(rounded).replace(".", ",");
+}
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+let toastTimer = null;
+function toast(msg) {
+  let t = el("toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    t.style.cssText =
+      "position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#1f2a24;color:#fff;padding:12px 18px;border-radius:999px;font-size:.9rem;font-weight:600;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .25s;opacity:0;";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  requestAnimationFrame(() => (t.style.opacity = "1"));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.style.opacity = "0"), 2200);
 }
