@@ -4,8 +4,21 @@
 // yalnızca bu cihazda (localStorage) saklanır.
 (function () {
   const keyOf = () => localStorage.getItem("eviko_gemini_key") || "";
-  const modelOf = () => localStorage.getItem("eviko_gemini_model") || "gemini-2.0-flash";
+  const modelOf = () => localStorage.getItem("eviko_gemini_model") || "gemini-2.5-flash";
   const hasKey = () => Boolean(keyOf());
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // Seçili model olmazsa otomatik denenecek yedek modeller.
+  const FALLBACK_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
+  ];
+  function modelChain() {
+    const chosen = modelOf();
+    return [chosen, ...FALLBACK_MODELS.filter((m) => m !== chosen)];
+  }
 
   const PERSONA =
     "Sen Eviko adlı sıcak, pratik bir mutfak asistanısın. Sebze/meyve " +
@@ -20,60 +33,80 @@
       .trim();
   }
 
-  async function call(parts, maxOutputTokens = 4096) {
-    if (!hasKey()) {
-      throw new Error("Gemini API anahtarı yok. ⚙️ Ayarlar'dan ekleyin.");
-    }
+  // Tek bir modele istek atar; sonucu/durumunu döndürür (hata fırlatmaz).
+  async function tryModel(model, parts, maxOutputTokens) {
     const url =
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelOf()}:generateContent?key=` +
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` +
       encodeURIComponent(keyOf());
-    let res;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: PERSONA }] },
+        contents: [{ role: "user", parts }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.6,
+          maxOutputTokens,
+        },
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = (data?.candidates?.[0]?.content?.parts || [])
+        .map((p) => p.text || "")
+        .join("");
+      if (!text) return { ok: false, retryable: true, msg: "boş yanıt" };
+      return { ok: true, value: JSON.parse(strip(text)) };
+    }
+    let msg = "";
     try {
-      res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: PERSONA }] },
-          contents: [{ role: "user", parts }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.6,
-            maxOutputTokens,
-          },
-        }),
-      });
-    } catch {
-      throw new Error("İnternet bağlantısı kurulamadı.");
+      msg = (await res.json())?.error?.message || "";
+    } catch {}
+    // Anahtar/yetki hatası: tekrar denemenin/yedeğe geçmenin anlamı yok.
+    if (res.status === 400 || res.status === 403) {
+      return { ok: false, fatal: true, status: res.status, msg };
     }
-    if (!res.ok) {
-      let msg = "";
-      try {
-        const e = await res.json();
-        msg = e?.error?.message || "";
-      } catch {}
-      const detail = msg ? ` (${msg.slice(0, 160)})` : "";
-      if (res.status === 400 || res.status === 403) {
-        throw new Error(
-          "Gemini anahtarı geçersiz veya yetkisiz görünüyor. Anahtarı aistudio.google.com/apikey'den aldığından emin ol." +
-            detail
-        );
+    // Yoğunluk/limit: tekrar denenebilir.
+    const retryable =
+      res.status === 429 || res.status === 500 || res.status === 503 || /overload/i.test(msg);
+    return { ok: false, retryable, status: res.status, msg };
+  }
+
+  // "Yoğun" hatasında otomatik tekrar dener; model olmazsa yedeklere geçer.
+  async function call(parts, maxOutputTokens = 4096) {
+    if (!hasKey()) throw new Error("Gemini API anahtarı yok. ⚙️ Ayarlar'dan ekleyin.");
+    const chain = modelChain();
+    let last = "";
+    for (let i = 0; i < chain.length; i++) {
+      const attempts = i === 0 ? 3 : 1; // seçili modeli ısrarla, yedekleri birer kez dene
+      for (let a = 0; a < attempts; a++) {
+        let r;
+        try {
+          r = await tryModel(chain[i], parts, maxOutputTokens);
+        } catch {
+          throw new Error("İnternet bağlantısı kurulamadı.");
+        }
+        if (r.ok) return r.value;
+        if (r.fatal) {
+          throw new Error(
+            "Gemini anahtarı geçersiz/yetkisiz. Anahtarı aistudio.google.com/apikey'den oluştur." +
+              (r.msg ? ` (${r.msg.slice(0, 140)})` : "")
+          );
+        }
+        last = r.msg || `HTTP ${r.status}`;
+        if (r.retryable && a < attempts - 1) {
+          await sleep(1200 * (a + 1)); // 1.2s, 2.4s bekleyerek tekrar dene
+          continue;
+        }
+        break; // sonraki yedek modele geç
       }
-      if (res.status === 429) {
-        throw new Error(
-          "Gemini limiti aşıldı. ⚙️ Ayarlar'dan daha yüksek ücretsiz limitli bir model seç " +
-            "(ör. gemini-2.0-flash-lite) veya 1 dakika bekle. Anahtar AI Studio'dan değilse " +
-            "ücretsiz kota 0 olabilir." +
-            detail
-        );
-      }
-      throw new Error(`Gemini hatası (${res.status}).${detail}`);
     }
-    const data = await res.json();
-    const text = (data?.candidates?.[0]?.content?.parts || [])
-      .map((p) => p.text || "")
-      .join("");
-    if (!text) throw new Error("Gemini boş yanıt verdi, tekrar deneyin.");
-    return JSON.parse(strip(text));
+    throw new Error(
+      "Tüm modeller şu an yoğun/limitli görünüyor. Birkaç dakika sonra tekrar dene. (" +
+        String(last).slice(0, 140) +
+        ")"
+    );
   }
 
   const ANALYZE_SHAPE = `
