@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Eviko · Evdeki sebzelerle ne pişirsem?</title>
+    <meta
+      name="description"
+      content="Evdeki sebze ve meyvelerin fotoğrafını çek; Eviko sana yapabileceğin pratik yemekleri önersin."
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>"
+    />
+  </head>
+  <body>
+    <div id="banner" class="banner hidden"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">🥗</span>
+        <span class="brand-name">Eviko</span>
+      </div>
+      <p class="tagline">Evdeki sebzelerle ne pişirsem?</p>
+    </header>
+
+    <main id="app">
+      <!-- 1) Fotoğraf seçme / çekme -->
+      <section id="screen-capture" class="screen">
+        <div class="hero">
+          <div class="hero-emoji">📸🥕🍅</div>
+          <h1>Sebzelerinin fotoğrafını çek</h1>
+          <p class="muted">
+            Evdeki sebze ve meyveleri bir araya getir, fotoğrafını çek. Eviko
+            onları tanıyıp sana <strong>birçok pratik yemek</strong> önersin.
+          </p>
+        </div>
+
+        <label class="dropzone" id="dropzone">
+          <input id="file-input" type="file" accept="image/*" capture="environment" hidden />
+          <div class="dropzone-inner">
+            <span class="dropzone-icon">＋</span>
+            <span class="dropzone-text">Fotoğraf çek veya seç</span>
+            <span class="muted small">JPG / PNG · telefonda kamera açılır</span>
+          </div>
+        </label>
+
+        <div id="preview-wrap" class="preview-wrap hidden">
+          <img id="preview" alt="Seçilen fotoğraf" />
+          <div class="preview-actions">
+            <button id="btn-retake" class="btn btn-ghost">Değiştir</button>
+            <button id="btn-analyze" class="btn btn-primary">Yemekleri bul</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2) Yükleniyor -->
+      <section id="screen-loading" class="screen hidden">
+        <div class="loader">
+          <div class="pan">🍳</div>
+          <p id="loading-text">Fotoğraf inceleniyor…</p>
+          <p class="muted small">Malzemeler tanınıyor ve tarifler hazırlanıyor.</p>
+        </div>
+      </section>
+
+      <!-- 3) Sonuçlar -->
+      <section id="screen-results" class="screen hidden">
+        <div class="results-head">
+          <h2>Tanınan malzemeler</h2>
+          <button id="btn-new" class="btn btn-ghost small">Yeni fotoğraf</button>
+        </div>
+        <div id="detected" class="chips"></div>
+
+        <h2 class="recipes-title">Yapabileceğin yemekler</h2>
+        <p class="muted small">Bir yemeğe dokun, adım adım tarifini görelim.</p>
+        <div id="recipes" class="recipe-grid"></div>
+      </section>
+    </main>
+
+    <!-- Tarif detayı -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-card" role="dialog" aria-modal="true">
+        <button id="modal-close" class="modal-close" aria-label="Kapat">×</button>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <footer class="footer muted small">
+      Eviko · Claude ile geliştirildi
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

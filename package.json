@@ -1,0 +1,28 @@
+{
+  "name": "eviko",
+  "version": "0.1.0",
+  "description": "Evdeki sebze ve meyvelerin fotoğrafından pratik yemek önerileri sunan web uygulaması.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "yemek",
+    "tarif",
+    "sebze",
+    "fotoğraf",
+    "claude",
+    "vision"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.101.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
