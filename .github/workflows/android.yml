@@ -9,6 +9,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# APK'yı Release olarak yayınlayabilmek için yazma izni
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -52,9 +56,26 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: APK'yı yükle
+      - name: APK'yı yeniden adlandır
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk eviko.apk
+
+      - name: APK'yı yükle (artefakt)
         uses: actions/upload-artifact@v4
         with:
           name: eviko-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: eviko.apk
           if-no-files-found: error
+
+      # Doğrudan, kalıcı indirme linki için APK'yı "apk-latest" Release'ine yükler.
+      # Link: https://github.com/<kullanıcı>/<depo>/releases/latest/download/eviko.apk
+      - name: APK'yı Release olarak yayınla
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: Eviko APK (son sürüm)
+          body: |
+            En güncel Eviko Android APK'sı (otomatik derlenir).
+            Doğrudan indir: **eviko.apk** (aşağıdaki Assets bölümü).
+          files: eviko.apk
+          make_latest: true

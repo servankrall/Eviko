@@ -73,7 +73,7 @@ async function checkHealth() {
     const d = await r.json();
     if (d.demo) {
       banner.textContent =
-        "Demo modu: API anahtarı yok, örnek veriler gösteriliyor. Gerçek analiz için sunucuya ANTHROPIC_API_KEY ekleyin.";
+        "Demo modu: örnek veriler gösteriliyor. Kendi fotoğraflarını analiz etmek için sunucuya ücretsiz GEMINI_API_KEY ekleyin.";
       banner.classList.remove("hidden");
     }
   } catch {
