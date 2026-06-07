@@ -118,7 +118,7 @@ async function checkHealth() {
     return;
   }
   try {
-    const r = await fetch(api("/api/health"));
+    const r = await fetch(api("/api/health"), { credentials: "include" });
     const ct = r.headers.get("content-type") || "";
     if (!ct.includes("application/json")) throw new Error("no-server");
     const d = await r.json();
@@ -384,6 +384,7 @@ async function serverPost(path, body) {
   try {
     res = await fetch(api(path), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
@@ -1035,6 +1036,7 @@ async function loadRecipeSocial(title) {
   try {
     const res = await fetch(api("/api/recipes/view"), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title }),
     });
@@ -1054,6 +1056,7 @@ async function submitComment(title, stars) {
   try {
     const res = await fetch(api("/api/recipes/comment"), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, text, stars: stars || null }),
     });
@@ -1107,6 +1110,7 @@ async function submitAuth() {
   try {
     const res = await fetch(api(path), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, name }),
     });
@@ -1130,7 +1134,7 @@ function showAuthError(msg) {
 }
 el("auth-logout").addEventListener("click", async () => {
   try {
-    await fetch(api("/api/auth/logout"), { method: "POST" });
+    await fetch(api("/api/auth/logout"), { method: "POST", credentials: "include" });
   } catch {}
   currentUser = null;
   renderAuthState();
@@ -1148,7 +1152,7 @@ function renderAuthState() {
 
 async function refreshAuth() {
   try {
-    const r = await fetch(api("/api/auth/me"));
+    const r = await fetch(api("/api/auth/me"), { credentials: "include" });
     const ct = r.headers.get("content-type") || "";
     if (!ct.includes("application/json")) return;
     const d = await r.json();
@@ -1184,6 +1188,7 @@ async function onGoogleCredential(resp) {
   try {
     const res = await fetch(api("/api/auth/google"), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken: resp.credential }),
     });
@@ -1201,7 +1206,7 @@ async function onGoogleCredential(resp) {
 // ---- Ana sayfa bölümleri (günün favorileri / en çok kullanılan / tavsiye) ----
 async function loadHome() {
   try {
-    const r = await fetch(api("/api/recipes/home"));
+    const r = await fetch(api("/api/recipes/home"), { credentials: "include" });
     const ct = r.headers.get("content-type") || "";
     if (!ct.includes("application/json")) return;
     const d = await r.json();
