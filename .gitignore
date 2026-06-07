@@ -11,3 +11,6 @@ ios/
 *.keystore
 # Sabit debug imza anahtarı (güncellemelerin düzgün kurulması için commit'lenir)
 !ci/debug.keystore
+
+# Yerel veritabanı (JSON)
+data/

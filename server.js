@@ -5,6 +5,17 @@ import { fileURLToPath } from "node:url";
 
 import { getProvider } from "./src/provider.js";
 import { demoAnalyze, demoRecipe, demoCalories, demoPlan } from "./src/demo.js";
+import * as db from "./src/db.js";
+import {
+  hashPassword,
+  verifyPassword,
+  parseCookies,
+  setSessionCookie,
+  clearSessionCookie,
+  googleEnabled,
+  verifyGoogleToken,
+} from "./src/auth.js";
+import { getDishPhoto } from "./src/images.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -15,7 +26,22 @@ const DEMO = !provider;
 
 // Base64 görüntüler büyük olabildiği için JSON limitini yükseltiyoruz.
 app.use(express.json({ limit: "20mb" }));
+
+// Oturumu çereze göre yükle (req.user)
+app.use((req, _res, next) => {
+  const token = parseCookies(req).eviko_sid;
+  req.sessionToken = token;
+  req.user = token ? db.getSessionUser(token) : null;
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
+
+function requireAuth(req, res, next) {
+  if (!req.user) return res.status(401).json({ error: "Bu işlem için giriş yapmalısın." });
+  next();
+}
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 // Ortam durumu (ön yüz demo modunu buradan öğrenir)
 app.get("/api/health", (_req, res) => {
@@ -138,6 +164,119 @@ app.post("/api/plan", async (req, res) => {
       error: "Haftalık plan hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Hesaplar
+// ---------------------------------------------------------------------------
+app.get("/api/auth/me", (req, res) => {
+  res.json({
+    user: db.publicUser(req.user),
+    googleEnabled: googleEnabled(),
+    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
+  });
+});
+
+app.post("/api/auth/register", (req, res) => {
+  const { email, name, password } = req.body || {};
+  if (!EMAIL_RE.test(String(email || ""))) {
+    return res.status(400).json({ error: "Geçerli bir e-posta girin." });
+  }
+  if (String(password || "").length < 6) {
+    return res.status(400).json({ error: "Şifre en az 6 karakter olmalı." });
+  }
+  if (db.findUserByEmail(email)) {
+    return res.status(409).json({ error: "Bu e-posta zaten kayıtlı." });
+  }
+  const user = db.createUser({ email, name, passHash: hashPassword(password) });
+  setSessionCookie(res, db.createSession(user.id));
+  res.json({ user: db.publicUser(user) });
+});
+
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body || {};
+  const user = db.findUserByEmail(email);
+  if (!user || !user.passHash || !verifyPassword(password, user.passHash)) {
+    return res.status(401).json({ error: "E-posta veya şifre hatalı." });
+  }
+  setSessionCookie(res, db.createSession(user.id));
+  res.json({ user: db.publicUser(user) });
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  db.deleteSession(req.sessionToken);
+  clearSessionCookie(res);
+  res.json({ ok: true });
+});
+
+app.post("/api/auth/google", async (req, res) => {
+  try {
+    const { idToken } = req.body || {};
+    const g = await verifyGoogleToken(idToken);
+    let user = db.findUserByEmail(g.email);
+    if (!user) user = db.createUser({ email: g.email, name: g.name, googleId: g.googleId });
+    setSessionCookie(res, db.createSession(user.id));
+    res.json({ user: db.publicUser(user) });
+  } catch (err) {
+    res.status(401).json({ error: err.message || "Google girişi başarısız." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Tarif sosyal verileri (fotoğraf, görüntülenme, yorum, puan)
+// ---------------------------------------------------------------------------
+app.get("/api/recipes/home", (_req, res) => {
+  res.json({
+    daily: db.dailyFavorites(12),
+    popular: db.mostUsed(12),
+    recommended: db.recommended(12),
+  });
+});
+
+// Tarif açılınca: görüntülenme say + fotoğraf (yoksa Wikimedia'dan) + yorumlar
+app.post("/api/recipes/view", async (req, res) => {
+  try {
+    const { title } = req.body || {};
+    if (!title) return res.status(400).json({ error: "title gerekli." });
+    const slug = db.slugify(title);
+    const r = db.ensureRecipe(slug, title);
+    db.incView(slug);
+    if (!r.photoTried) {
+      const photo = await getDishPhoto(title);
+      db.setPhoto(slug, photo);
+    }
+    const cur = db.getRecipe(slug);
+    res.json({
+      slug,
+      title: cur.title,
+      photo: cur.photo,
+      views: cur.views,
+      rating: db.recipeRating(cur),
+      ratingCount: cur.ratingCount || 0,
+      comments: db.listComments(slug),
+    });
+  } catch (err) {
+    console.error("recipe view hatası:", err);
+    res.status(500).json({ error: "Tarif bilgisi alınamadı." });
+  }
+});
+
+// Yorum ekle (yalnızca giriş yapanlar)
+app.post("/api/recipes/comment", requireAuth, (req, res) => {
+  const { title, text, stars } = req.body || {};
+  if (!title || !String(text || "").trim()) {
+    return res.status(400).json({ error: "Yorum metni gerekli." });
+  }
+  const slug = db.slugify(title);
+  db.ensureRecipe(slug, title);
+  db.addComment({
+    slug,
+    userId: req.user.id,
+    userName: req.user.name,
+    text,
+    stars: Number(stars) || null,
+  });
+  res.json({ ok: true, comments: db.listComments(slug), rating: db.recipeRating(db.getRecipe(slug)) });
 });
 
 app.listen(PORT, () => {

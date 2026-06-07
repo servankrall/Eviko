@@ -41,6 +41,9 @@ let prefs = store.get("eviko_prefs", []);
 let history = store.get("eviko_history", []);
 let lastRecipes = [];
 let lastPlan = [];
+let currentSocial = null;
+let currentUser = null;
+let googleClientId = null;
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -70,6 +73,8 @@ function init() {
   setMode(mode);
   updateBadges();
   checkHealth();
+  refreshAuth();
+  loadHome();
 }
 
 function registerServiceWorker() {
@@ -413,11 +418,16 @@ function renderResults(data) {
     chips.innerHTML = detected
       .map(
         (d) =>
-          `<span class="chip"><span>${d.emoji || "🥬"}</span><span>${escapeHtml(
-            d.name
-          )}</span><span class="conf">${escapeHtml(d.confidence || "")}</span></span>`
+          `<span class="chip tappable" data-store="${escapeHtml(d.name)}" title="Markete git"><span>${
+            d.emoji || "🥬"
+          }</span><span>${escapeHtml(d.name)}</span><span class="conf">${escapeHtml(
+            d.confidence || ""
+          )}</span></span>`
       )
       .join("");
+    chips.querySelectorAll(".chip.tappable").forEach((c) =>
+      c.addEventListener("click", () => openStore(c.dataset.store))
+    );
   }
 
   const recipes = data.recipes || [];
@@ -538,8 +548,11 @@ async function openRecipeByTitle(title) {
 function openRecipeObject(recipe) {
   currentRecipe = recipe;
   currentServings = recipe.servings || 2;
+  currentSocial = null;
   modal.classList.remove("hidden");
   renderRecipeDetail();
+  modal.querySelector(".modal-card").scrollTop = 0;
+  loadRecipeSocial(recipe.title);
 }
 
 function renderRecipeDetail() {
@@ -553,7 +566,9 @@ function renderRecipeDetail() {
       if (ing.toTaste) amount = "damak zevkine göre";
       else if (ing.quantity > 0) amount = `${formatQty(ing.quantity * factor)} ${ing.unit || ""}`.trim();
       else amount = ing.unit || "—";
-      return `<li><span>${escapeHtml(ing.item)}</span><span class="amount">${escapeHtml(amount)}</span></li>`;
+      return `<li class="tappable" data-item="${escapeHtml(ing.item)}"><span>${escapeHtml(
+        ing.item
+      )}<span class="item-shop">🛒</span></span><span class="amount">${escapeHtml(amount)}</span></li>`;
     })
     .join("");
 
@@ -563,6 +578,11 @@ function renderRecipeDetail() {
 
   el("modal-body").innerHTML = `
     <div class="recipe-detail">
+      <div id="recipe-photo-slot">${
+        currentSocial && currentSocial.photo
+          ? `<img class="recipe-photo" src="${escapeHtml(currentSocial.photo)}" alt="${escapeHtml(r.title)}" />`
+          : ""
+      }</div>
       <h2>${escapeHtml(r.title)}</h2>
       <div class="detail-meta">
         ${r.durationMinutes ? `<span class="tag">⏱ ${r.durationMinutes} dk</span>` : ""}
@@ -604,6 +624,7 @@ function renderRecipeDetail() {
           ? `<div class="detail-section"><div class="tips"><strong>İpuçları</strong><ul>${tips}</ul></div></div>`
           : ""
       }
+      <div id="recipe-social" class="detail-section">${socialHtml(r)}</div>
     </div>`;
 
   el("serv-minus").onclick = () => changeServings(-1);
@@ -622,7 +643,10 @@ function renderRecipeDetail() {
   modal.querySelectorAll(".step-list li").forEach((li) =>
     li.addEventListener("click", () => li.classList.toggle("done"))
   );
-  modal.querySelector(".modal-card").scrollTop = 0;
+  modal.querySelectorAll(".ingredient-list li.tappable").forEach((li) =>
+    li.addEventListener("click", () => openStore(li.dataset.item))
+  );
+  wireSocial(r);
 }
 
 function changeServings(delta) {
@@ -936,6 +960,282 @@ async function shareRecipe(r) {
       toast("Tarif kopyalandı 📋");
     }
   } catch {}
+}
+
+// ---- Malzeme → en yakın market (Google Haritalar) ----
+function openStore(name) {
+  const q = encodeURIComponent((name || "").trim() + " market manav");
+  const go = (c) => {
+    const url = c
+      ? `https://www.google.com/maps/search/${q}/@${c.latitude},${c.longitude},14z`
+      : `https://www.google.com/maps/search/?api=1&query=${q}`;
+    window.open(url, "_blank");
+  };
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((p) => go(p.coords), () => go(null), { timeout: 5000 });
+  } else go(null);
+}
+
+// ---- Tarif sosyal verisi (fotoğraf + yorum + puan) ----
+function socialHtml(r) {
+  const s = currentSocial;
+  if (!s) return '<div class="comments"><p class="muted small">Yorumlar yükleniyor…</p></div>';
+  const ratingLine = s.ratingCount
+    ? `<span class="c-stars">★ ${s.rating}</span> <span class="muted small">(${s.ratingCount} puan)</span>`
+    : '<span class="muted small">Henüz puan yok</span>';
+  const comments = (s.comments || []).length
+    ? s.comments
+        .map(
+          (c) => `
+        <div class="comment">
+          <div class="c-head"><span class="c-user">${escapeHtml(c.userName || "Kullanıcı")}</span>${
+            c.stars ? `<span class="c-stars">${"★".repeat(c.stars)}</span>` : ""
+          }</div>
+          <div class="c-text">${escapeHtml(c.text)}</div>
+        </div>`
+        )
+        .join("")
+    : '<p class="muted small">İlk yorumu sen yaz!</p>';
+  const form = currentUser
+    ? `<div class="comment-form">
+         <div class="star-pick" id="star-pick">${[1, 2, 3, 4, 5]
+           .map((n) => `<span data-star="${n}">★</span>`)
+           .join("")}</div>
+         <textarea id="comment-text" placeholder="Bu tarif hakkında yorumun…"></textarea>
+         <button class="btn btn-primary auth-submit" id="comment-submit" style="margin-top:8px">Yorum yap</button>
+       </div>`
+    : '<div class="comment-login-note">Yorum yapmak için <a href="#" id="comment-login">giriş yap</a>.</div>';
+  return `<div class="comments"><h4>Yorumlar &nbsp; ${ratingLine}</h4>${comments}${form}</div>`;
+}
+
+function wireSocial(r) {
+  let picked = 0;
+  const pick = el("star-pick");
+  if (pick) {
+    pick.querySelectorAll("span").forEach((sp) =>
+      sp.addEventListener("click", () => {
+        picked = Number(sp.dataset.star);
+        pick.querySelectorAll("span").forEach((x) =>
+          x.classList.toggle("on", Number(x.dataset.star) <= picked)
+        );
+      })
+    );
+  }
+  const submit = el("comment-submit");
+  if (submit) submit.onclick = () => submitComment(r.title, picked);
+  const login = el("comment-login");
+  if (login)
+    login.onclick = (e) => {
+      e.preventDefault();
+      openAuth();
+    };
+}
+
+async function loadRecipeSocial(title) {
+  try {
+    const res = await fetch(api("/api/recipes/view"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) return; // sunucu yok (Gemini-only/APK)
+    const data = await res.json();
+    if (!res.ok) return;
+    currentSocial = data;
+    if (currentRecipe && currentRecipe.title === title) renderRecipeDetail();
+  } catch {}
+}
+
+async function submitComment(title, stars) {
+  const ta = el("comment-text");
+  const text = ta ? ta.value.trim() : "";
+  if (!text) return;
+  try {
+    const res = await fetch(api("/api/recipes/comment"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, text, stars: stars || null }),
+    });
+    if (res.status === 401) {
+      openAuth();
+      return;
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Yorum eklenemedi");
+    if (currentSocial) {
+      currentSocial.comments = data.comments;
+      currentSocial.rating = data.rating;
+      currentSocial.ratingCount = (currentSocial.ratingCount || 0) + 1;
+    }
+    renderRecipeDetail();
+    toast("Yorumun eklendi ✓");
+  } catch (err) {
+    toast(err.message || "Yorum eklenemedi");
+  }
+}
+
+// ---- Hesap ----
+const authModal = el("auth-modal");
+let authMode = "login";
+function openAuth() {
+  el("auth-error").classList.add("hidden");
+  renderAuthState();
+  authModal.classList.remove("hidden");
+}
+el("nav-account").addEventListener("click", openAuth);
+el("auth-close").addEventListener("click", () => authModal.classList.add("hidden"));
+authModal.addEventListener("click", (e) => {
+  if (e.target === authModal) authModal.classList.add("hidden");
+});
+el("tab-login").addEventListener("click", () => setAuthMode("login"));
+el("tab-register").addEventListener("click", () => setAuthMode("register"));
+function setAuthMode(m) {
+  authMode = m;
+  el("tab-login").classList.toggle("active", m === "login");
+  el("tab-register").classList.toggle("active", m === "register");
+  el("auth-name").classList.toggle("hidden", m !== "register");
+  el("auth-title").textContent = m === "login" ? "Giriş yap" : "Kayıt ol";
+  el("auth-submit").textContent = m === "login" ? "Giriş yap" : "Kayıt ol";
+}
+el("auth-submit").addEventListener("click", submitAuth);
+async function submitAuth() {
+  const email = el("auth-email").value.trim();
+  const password = el("auth-password").value;
+  const name = el("auth-name").value.trim();
+  const path = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
+  try {
+    const res = await fetch(api(path), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, name }),
+    });
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json"))
+      throw new Error("Sunucu yok. Hesap özellikleri website/sunucu modunda çalışır.");
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || "İşlem başarısız");
+    currentUser = d.user;
+    renderAuthState();
+    authModal.classList.add("hidden");
+    toast("Hoş geldin, " + currentUser.name + " 👋");
+  } catch (err) {
+    showAuthError(err.message);
+  }
+}
+function showAuthError(msg) {
+  const e = el("auth-error");
+  e.textContent = msg;
+  e.classList.remove("hidden");
+}
+el("auth-logout").addEventListener("click", async () => {
+  try {
+    await fetch(api("/api/auth/logout"), { method: "POST" });
+  } catch {}
+  currentUser = null;
+  renderAuthState();
+  toast("Çıkış yapıldı");
+});
+
+function renderAuthState() {
+  const btn = el("nav-account");
+  btn.textContent = currentUser ? (currentUser.name || "?").slice(0, 1).toLocaleUpperCase("tr") : "👤";
+  el("auth-logged-in").classList.toggle("hidden", !currentUser);
+  el("auth-logged-out").classList.toggle("hidden", !!currentUser);
+  if (currentUser) el("auth-hello").textContent = `Merhaba, ${currentUser.name} (${currentUser.email})`;
+  el("google-btn").classList.toggle("hidden", !googleClientId || !!currentUser);
+}
+
+async function refreshAuth() {
+  try {
+    const r = await fetch(api("/api/auth/me"));
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) return;
+    const d = await r.json();
+    currentUser = d.user;
+    googleClientId = d.googleEnabled ? d.googleClientId : null;
+    renderAuthState();
+    if (googleClientId) initGoogle(googleClientId);
+  } catch {}
+}
+
+let googleInited = false;
+function initGoogle(clientId) {
+  if (googleInited) return;
+  const s = document.createElement("script");
+  s.src = "https://accounts.google.com/gsi/client";
+  s.async = true;
+  s.defer = true;
+  s.onload = () => {
+    try {
+      window.google.accounts.id.initialize({ client_id: clientId, callback: onGoogleCredential });
+      window.google.accounts.id.renderButton(el("google-btn"), {
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        width: 280,
+      });
+      googleInited = true;
+    } catch {}
+  };
+  document.head.appendChild(s);
+}
+async function onGoogleCredential(resp) {
+  try {
+    const res = await fetch(api("/api/auth/google"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken: resp.credential }),
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || "Google girişi başarısız");
+    currentUser = d.user;
+    renderAuthState();
+    authModal.classList.add("hidden");
+    toast("Hoş geldin, " + currentUser.name + " 👋");
+  } catch (err) {
+    showAuthError(err.message);
+  }
+}
+
+// ---- Ana sayfa bölümleri (günün favorileri / en çok kullanılan / tavsiye) ----
+async function loadHome() {
+  try {
+    const r = await fetch(api("/api/recipes/home"));
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) return;
+    const d = await r.json();
+    let any = false;
+    any = renderHomeRow("daily", d.daily) || any;
+    any = renderHomeRow("popular", d.popular) || any;
+    any = renderHomeRow("recommended", d.recommended) || any;
+    el("home-sections").classList.toggle("hidden", !any);
+  } catch {}
+}
+function renderHomeRow(key, items) {
+  const sec = el("home-" + key);
+  const row = el("row-" + key);
+  const list = items || [];
+  sec.classList.toggle("hidden", list.length === 0);
+  if (!list.length) return false;
+  row.innerHTML = list
+    .map(
+      (it) => `
+      <button class="home-card" data-title="${escapeHtml(it.title)}">
+        ${
+          it.photo
+            ? `<img src="${escapeHtml(it.photo)}" alt="" loading="lazy"/>`
+            : '<div class="ph">🥗</div>'
+        }
+        <div class="hc-body"><h3>${escapeHtml(it.title)}</h3>
+          <div class="hc-meta">${it.rating ? `★ ${it.rating} · ` : ""}${it.views || 0} kez</div></div>
+      </button>`
+    )
+    .join("");
+  row.querySelectorAll(".home-card").forEach((c) =>
+    c.addEventListener("click", () => openRecipeByTitle(c.dataset.title))
+  );
+  return true;
 }
 
 // ---- Yardımcılar ----
