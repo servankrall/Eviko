@@ -74,7 +74,11 @@ function prefText(preferences) {
     : "";
 }
 
-export async function analyzeImage({ imageBase64, mediaType, preferences = [] }) {
+function langText(language) {
+  return language === "en" ? " IMPORTANT: Respond ENTIRELY in English." : "";
+}
+
+export async function analyzeImage({ imageBase64, mediaType, preferences = [], language = "tr" }) {
   const prompt =
     "Bu fotoğraftaki tüm sebze ve meyveleri tanımla. Sonra bu malzemelerle " +
     "(tuz, yağ, soğan, sarımsak, un, yumurta, baharat gibi temel malzemeler evde " +
@@ -82,21 +86,23 @@ export async function analyzeImage({ imageBase64, mediaType, preferences = [] })
     "salata, kahvaltılık gibi farklı türlerde olsun. Fotoğrafta sebze/meyve yoksa " +
     "'detected' listesini boş bırak." +
     prefText(preferences) +
-    ANALYZE_SHAPE;
+    ANALYZE_SHAPE +
+    langText(language);
   return callGemini([
     { inlineData: { mimeType: mediaType, data: imageBase64 } },
     { text: prompt },
   ]);
 }
 
-export async function analyzeText({ text, preferences = [] }) {
+export async function analyzeText({ text, preferences = [], language = "tr" }) {
   const prompt =
     `Kullanıcının elindeki malzemeler: ${text}. Bu malzemelerle yapılabilecek 6-8 ` +
     "çeşitli pratik yemek öner (tuz, yağ, soğan, sarımsak, un, yumurta, baharat evde " +
     "var sayılır). 'detected' alanına kullanıcının yazdığı malzemeleri uygun emoji ve " +
     "confidence 'yüksek' ile koy." +
     prefText(preferences) +
-    ANALYZE_SHAPE;
+    ANALYZE_SHAPE +
+    langText(language);
   return callGemini([{ text: prompt }]);
 }
 
@@ -109,21 +115,24 @@ Yanıtı SADECE şu JSON yapısında ver:
   "durationMinutes": 30,
   "difficulty": "kolay|orta|zor",
   "caloriesPerServing": 420,
+  "estimatedCostTl": 85,
   "ingredients": [{"item": "malzeme", "quantity": 2, "unit": "adet|su bardağı|yemek kaşığı|g|ml", "toTaste": false}],
   "steps": ["sıralı pişirme adımları"],
   "tips": ["1-3 ipucu"]
 }
-Not: "toTaste" true olanlarda (tuz, baharat) "quantity" 0 olabilir.`;
+Not: "toTaste" true olanlarda "quantity" 0 olabilir. "estimatedCostTl" tarifin yaklaşık toplam malzeme maliyeti (TL).`;
 
-export async function getRecipe({ title, detected = [], preferences = [] }) {
+export async function getRecipe({ title, detected = [], preferences = [], language = "tr" }) {
   const elde = detected.length ? `Evde şu malzemeler var: ${detected.join(", ")}. ` : "";
   const prompt =
     `"${title}" adlı yemeğin detaylı, adım adım tarifini ver. ${elde}` +
     "Tarifi 2-4 kişilik temel al ve 'servings' alanına yaz. Malzeme miktarlarını " +
     "sayısal 'quantity' + 'unit' ile, damak zevkine göre olanları 'toTaste': true ile belirt. " +
-    "Porsiyon başına tahmini kaloriyi 'caloriesPerServing' (sayı) olarak ver." +
+    "Porsiyon başına tahmini kaloriyi 'caloriesPerServing', tarifin yaklaşık toplam " +
+    "malzeme maliyetini 'estimatedCostTl' (TL) olarak ver." +
     prefText(preferences) +
-    RECIPE_SHAPE;
+    RECIPE_SHAPE +
+    langText(language);
   return callGemini([{ text: prompt }]);
 }
 
@@ -140,15 +149,36 @@ Yanıtı SADECE şu JSON yapısında ver:
   "healthNote": "kısa faydalı not"
 }`;
 
-export async function analyzeCalories({ imageBase64, mediaType }) {
+export async function analyzeCalories({ imageBase64, mediaType, language = "tr" }) {
   const prompt =
     "Bu, hazır/pişmiş bir yemek fotoğrafı. Yemeği tanı, porsiyonu fotoğraftan " +
     "tahmin et; tahmini toplam kaloriyi (kcal), bileşen dağılımını ve makro " +
     "besinleri (protein/karbonhidrat/yağ - gram) ver. Bu görsel bir tahmindir; " +
     "emin değilsen 'confidence' düşük olsun. Yemek yoksa 'dishName' boş olsun." +
-    CALORIE_SHAPE;
+    CALORIE_SHAPE +
+    langText(language);
   return callGemini(
     [{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }],
     2048
   );
+}
+
+// 4) Haftalık yemek planı
+const PLAN_SHAPE = `
+Yanıtı SADECE şu JSON yapısında ver:
+{"days":[{"day":"Pazartesi","title":"yemek adı","description":"kısa açıklama"}]}
+Tam 7 gün ver (Pazartesi'den Pazar'a).`;
+
+export async function planWeek({ preferences = [], detected = [], language = "tr" }) {
+  const elde = detected.length
+    ? `Mümkünse şu malzemeleri değerlendir: ${detected.join(", ")}. `
+    : "";
+  const prompt =
+    "Bir haftalık (7 gün) pratik akşam yemeği planı oluştur. " +
+    elde +
+    "Çeşitli, dengeli ve ev yapımı yemekler seç." +
+    prefText(preferences) +
+    PLAN_SHAPE +
+    langText(language);
+  return callGemini([{ text: prompt }]);
 }

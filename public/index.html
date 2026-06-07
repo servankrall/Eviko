@@ -93,6 +93,8 @@
             <button class="btn btn-ghost" type="submit">Ara</button>
           </form>
         </div>
+
+        <button id="btn-plan" class="btn btn-ghost plan-btn">📅 Haftalık yemek planı</button>
       </section>
 
       <!-- 2) Yükleniyor -->
@@ -167,6 +169,16 @@
         <div id="history-list"></div>
         <button id="btn-clear-history" class="btn btn-ghost small hidden">Geçmişi temizle</button>
       </section>
+
+      <!-- 8) Haftalık plan -->
+      <section id="screen-plan" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>📅 Haftalık plan</h2>
+        </div>
+        <p class="muted small">Bir güne dokun, tarifini aç.</p>
+        <div id="plan-list" class="plan-list"></div>
+      </section>
     </main>
 
     <!-- Tarif detayı -->
@@ -221,6 +233,12 @@
           <option value="auto">Otomatik (cihaza göre)</option>
           <option value="light">Açık</option>
           <option value="dark">Koyu</option>
+        </select>
+
+        <label class="field-label" for="lang-select">Dil / Language</label>
+        <select id="lang-select">
+          <option value="tr">Türkçe</option>
+          <option value="en">English</option>
         </select>
 
         <div class="settings-actions">

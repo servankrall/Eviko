@@ -9,6 +9,7 @@ const screens = {
   favorites: el("screen-favorites"),
   shopping: el("screen-shopping"),
   history: el("screen-history"),
+  plan: el("screen-plan"),
 };
 
 // ---- Durum ----
@@ -45,6 +46,9 @@ function apiBase() {
 }
 function api(path) {
   return apiBase() + path;
+}
+function langPref() {
+  return localStorage.getItem("eviko_lang") || "tr";
 }
 
 // ---- Ekran geçişi ----
@@ -136,6 +140,7 @@ function setMode(m) {
   const ing = m === "ingredients";
   el("prefs-row").classList.toggle("hidden", !ing);
   el("manual-entry").classList.toggle("hidden", !ing);
+  el("btn-plan").classList.toggle("hidden", !ing);
   if (m === "ingredients") {
     el("hero-emoji").textContent = "📸🥕🍅";
     el("hero-title").textContent = "Sebzelerinin fotoğrafını çek";
@@ -237,6 +242,7 @@ async function runIngredients() {
           image: selectedImage.base64,
           mediaType: selectedImage.mediaType,
           preferences: prefs,
+          language: langPref(),
         });
     renderResults(data);
     saveHistory("ingredients", data);
@@ -260,13 +266,58 @@ async function runManual(text) {
   try {
     const data = useGemini()
       ? await window.GeminiClient.analyzeText(text, prefs)
-      : await serverPost("/api/analyze-text", { text, preferences: prefs });
+      : await serverPost("/api/analyze-text", { text, preferences: prefs, language: langPref() });
     renderResults(data);
     saveHistory("ingredients", data);
     showScreen("results");
   } catch (err) {
     fail(err);
   }
+}
+
+// ---- Haftalık yemek planı ----
+el("btn-plan").addEventListener("click", runPlan);
+async function runPlan() {
+  showScreen("loading");
+  el("loading-text").textContent = "Haftalık plan hazırlanıyor…";
+  el("loading-sub").textContent = "Sana uygun 7 günlük menü oluşturuluyor.";
+  try {
+    const data = useGemini()
+      ? await window.GeminiClient.planWeek(prefs, detectedNames)
+      : await serverPost("/api/plan", {
+          preferences: prefs,
+          detected: detectedNames,
+          language: langPref(),
+        });
+    renderPlan(data);
+    showScreen("plan");
+  } catch (err) {
+    fail(err);
+  }
+}
+
+function renderPlan(data) {
+  const days = (data && data.days) || [];
+  const list = el("plan-list");
+  if (days.length === 0) {
+    list.innerHTML = '<div class="list-empty">Plan oluşturulamadı, tekrar dene.</div>';
+    return;
+  }
+  list.innerHTML = days
+    .map(
+      (d, i) => `
+      <button class="plan-card" data-index="${i}">
+        <div class="plan-day">${escapeHtml(d.day || "")}</div>
+        <div class="plan-meal">
+          <h3>${escapeHtml(d.title || "")}</h3>
+          <p class="muted small">${escapeHtml(d.description || "")}</p>
+        </div>
+      </button>`
+    )
+    .join("");
+  list.querySelectorAll(".plan-card").forEach((c) =>
+    c.addEventListener("click", () => openRecipeByTitle(days[Number(c.dataset.index)].title))
+  );
 }
 
 async function runCalories() {
@@ -279,6 +330,7 @@ async function runCalories() {
       : await serverPost("/api/calories", {
           image: selectedImage.base64,
           mediaType: selectedImage.mediaType,
+          language: langPref(),
         });
     renderCalories(data);
     saveHistory("dish", data);
@@ -440,7 +492,12 @@ async function openRecipeByTitle(title) {
   try {
     const data = useGemini()
       ? await window.GeminiClient.recipe(title, detectedNames, prefs)
-      : await serverPost("/api/recipe", { title, detected: detectedNames, preferences: prefs });
+      : await serverPost("/api/recipe", {
+          title,
+          detected: detectedNames,
+          preferences: prefs,
+          language: langPref(),
+        });
     openRecipeObject(data);
   } catch (err) {
     el("modal-body").innerHTML = `<div class="detail-loading"><p>${escapeHtml(
@@ -482,6 +539,7 @@ function renderRecipeDetail() {
         ${r.durationMinutes ? `<span class="tag">⏱ ${r.durationMinutes} dk</span>` : ""}
         ${r.difficulty ? `<span class="tag easy">${escapeHtml(r.difficulty)}</span>` : ""}
         ${r.caloriesPerServing ? `<span class="tag cat">🔥 ~${r.caloriesPerServing} kcal/porsiyon</span>` : ""}
+        ${r.estimatedCostTl ? `<span class="tag">🛒 ~${r.estimatedCostTl} ₺</span>` : ""}
       </div>
 
       <div class="portion">
@@ -680,6 +738,7 @@ el("nav-settings").addEventListener("click", () => {
     localStorage.getItem("eviko_gemini_model") || "gemini-2.5-flash";
   el("api-base-input").value = localStorage.getItem("eviko_api_base") || "";
   el("theme-select").value = localStorage.getItem("eviko_theme") || "auto";
+  el("lang-select").value = localStorage.getItem("eviko_lang") || "tr";
   settingsModal.classList.remove("hidden");
 });
 el("settings-close").addEventListener("click", () => settingsModal.classList.add("hidden"));
@@ -695,6 +754,7 @@ el("settings-save").addEventListener("click", () => {
   if (v) localStorage.setItem("eviko_api_base", v);
   else localStorage.removeItem("eviko_api_base");
   localStorage.setItem("eviko_theme", el("theme-select").value);
+  localStorage.setItem("eviko_lang", el("lang-select").value);
   applyTheme();
   settingsModal.classList.add("hidden");
   checkHealth();
@@ -709,6 +769,8 @@ el("settings-clear").addEventListener("click", () => {
   el("api-base-input").value = "";
   localStorage.removeItem("eviko_theme");
   el("theme-select").value = "auto";
+  localStorage.removeItem("eviko_lang");
+  el("lang-select").value = "tr";
   applyTheme();
   checkHealth();
   toast("Ayarlar temizlendi");

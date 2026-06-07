@@ -140,6 +140,26 @@
     );
   }
 
+  function langOf() {
+    return localStorage.getItem("eviko_lang") || "tr";
+  }
+  function langLine() {
+    return langOf() === "en"
+      ? "\nIMPORTANT: Respond ENTIRELY in English (all text values in the JSON)."
+      : "";
+  }
+  function favLine() {
+    try {
+      const f = JSON.parse(localStorage.getItem("eviko_favorites") || "[]");
+      const t = f.map((x) => x && x.title).filter(Boolean).slice(0, 8);
+      return t.length
+        ? `\nKullanıcının beğendiği yemekler: ${t.join(", ")}. Önerileri bu damak zevkine yakın tut.`
+        : "";
+    } catch {
+      return "";
+    }
+  }
+
   const ANALYZE_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
 {"detected":[{"name":"Türkçe ad","emoji":"tek emoji","confidence":"yüksek|orta|düşük"}],
@@ -147,16 +167,21 @@ Yanıtı SADECE şu JSON yapısında ver:
 
   const RECIPE_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
-{"title":"ad","servings":2,"durationMinutes":30,"difficulty":"kolay|orta|zor","caloriesPerServing":420,
+{"title":"ad","servings":2,"durationMinutes":30,"difficulty":"kolay|orta|zor","caloriesPerServing":420,"estimatedCostTl":85,
 "ingredients":[{"item":"malzeme","quantity":2,"unit":"adet|su bardağı|yemek kaşığı|g|ml","toTaste":false}],
 "steps":["..."],"tips":["..."]}
-"toTaste" true olanlarda "quantity" 0 olabilir. "caloriesPerServing" porsiyon başı tahmini kaloridir.`;
+"toTaste" true olanlarda "quantity" 0 olabilir. "caloriesPerServing" porsiyon başı tahmini kalori, "estimatedCostTl" tarifin yaklaşık toplam malzeme maliyetidir (Türk Lirası).`;
 
   const CALORIE_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
 {"dishName":"ad","summary":"kısa açıklama","totalCalories":350,"confidence":"yüksek|orta|düşük",
 "components":[{"name":"bileşen","emoji":"tek emoji","calories":120}],
 "macros":{"proteinG":10,"carbsG":40,"fatG":12},"healthNote":"kısa not"}`;
+
+  const PLAN_SHAPE = `
+Yanıtı SADECE şu JSON yapısında ver:
+{"days":[{"day":"Pazartesi","title":"yemek adı","description":"kısa açıklama"}]}
+Tam 7 gün ver (Pazartesi'den Pazar'a).`;
 
   async function analyze(imageBase64, mediaType, prefs = []) {
     const prompt =
@@ -165,7 +190,9 @@ Yanıtı SADECE şu JSON yapısında ver:
       "çeşitli pratik yemek öner (çorba, ana yemek, salata, kahvaltılık vb.). " +
       "Fotoğrafta sebze/meyve yoksa 'detected' boş olsun." +
       prefsLine(prefs) +
-      ANALYZE_SHAPE;
+      favLine() +
+      ANALYZE_SHAPE +
+      langLine();
     return call([{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }]);
   }
 
@@ -176,7 +203,9 @@ Yanıtı SADECE şu JSON yapısında ver:
       "pratik yemek öner. 'detected' alanına kullanıcının yazdığı malzemeleri uygun " +
       "emoji ve confidence:'yüksek' ile koy." +
       prefsLine(prefs) +
-      ANALYZE_SHAPE;
+      favLine() +
+      ANALYZE_SHAPE +
+      langLine();
     return call([{ text: prompt }]);
   }
 
@@ -186,9 +215,11 @@ Yanıtı SADECE şu JSON yapısında ver:
       `"${title}" yemeğinin detaylı, adım adım tarifini ver. ${elde}` +
       "2-4 kişilik temel al ('servings'). Miktarları sayısal 'quantity' + 'unit' ile, " +
       "damak zevkine göre olanları 'toTaste': true ile belirt. Porsiyon başına " +
-      "tahmini kaloriyi 'caloriesPerServing' (sayı) olarak ver." +
+      "tahmini kaloriyi 'caloriesPerServing', tarifin yaklaşık toplam malzeme " +
+      "maliyetini 'estimatedCostTl' (Türk Lirası) olarak ver." +
       prefsLine(prefs) +
-      RECIPE_SHAPE;
+      RECIPE_SHAPE +
+      langLine();
     return call([{ text: prompt }]);
   }
 
@@ -197,9 +228,26 @@ Yanıtı SADECE şu JSON yapısında ver:
       "Bu hazır/pişmiş bir yemek fotoğrafı. Yemeği tanı, porsiyonu tahmin et; " +
       "tahmini toplam kaloriyi (kcal), bileşen dağılımını ve makroları " +
       "(protein/karbonhidrat/yağ - gram) ver. Görsel tahmindir; emin değilsen " +
-      "'confidence' düşük olsun. Yemek yoksa 'dishName' boş olsun." + CALORIE_SHAPE;
+      "'confidence' düşük olsun. Yemek yoksa 'dishName' boş olsun." +
+      CALORIE_SHAPE +
+      langLine();
     return call([{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }]);
   }
 
-  window.GeminiClient = { hasKey, analyze, analyzeText, recipe, calories };
+  async function planWeek(prefs = [], detected = []) {
+    const elde = detected.length
+      ? `Mümkünse şu malzemeleri de değerlendir: ${detected.join(", ")}. `
+      : "";
+    const prompt =
+      "Bir haftalık (7 gün) pratik akşam yemeği planı oluştur. " +
+      elde +
+      "Çeşitli, dengeli ve ev yapımı yemekler seç." +
+      prefsLine(prefs) +
+      favLine() +
+      PLAN_SHAPE +
+      langLine();
+    return call([{ text: prompt }]);
+  }
+
+  window.GeminiClient = { hasKey, analyze, analyzeText, recipe, calories, planWeek };
 })();

@@ -82,6 +82,7 @@ export function demoRecipe(title) {
     durationMinutes: 20,
     difficulty: "kolay",
     caloriesPerServing: 280,
+    estimatedCostTl: 95,
     ingredients: [
       { item: "Domates", quantity: 3, unit: "adet", toTaste: false },
       { item: "Yeşil biber", quantity: 2, unit: "adet", toTaste: false },
@@ -104,6 +105,20 @@ export function demoRecipe(title) {
       "Acı sevenler pişirme sonunda biraz daha pul biber ekleyebilir.",
     ],
   };
+}
+
+export function demoPlan() {
+  const days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+  const meals = [
+    ["Menemen", "Pratik ve doyurucu"],
+    ["Sebze Türlüsü", "Mevsim sebzeleriyle"],
+    ["Mercimek Çorbası", "Yanında ekmekle"],
+    ["Fırında Patates", "Çıtır ve baharatlı"],
+    ["Çoban Salatası + Omlet", "Hafif bir akşam"],
+    ["Patlıcan Musakka", "Sofralık ana yemek"],
+    ["Domates Çorbası", "Sıcacık kapanış"],
+  ];
+  return { days: days.map((d, i) => ({ day: d, title: meals[i][0], description: meals[i][1] })) };
 }
 
 export function demoCalories() {

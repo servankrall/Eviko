@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getProvider } from "./src/provider.js";
-import { demoAnalyze, demoRecipe, demoCalories } from "./src/demo.js";
+import { demoAnalyze, demoRecipe, demoCalories, demoPlan } from "./src/demo.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -27,7 +27,7 @@ app.post("/api/analyze", async (req, res) => {
   try {
     if (DEMO) return res.json({ ...demoAnalyze(), demo: true });
 
-    const { image, mediaType, preferences } = req.body || {};
+    const { image, mediaType, preferences, language } = req.body || {};
     if (!image) {
       return res.status(400).json({ error: "Fotoğraf verisi (image) gerekli." });
     }
@@ -36,6 +36,7 @@ app.post("/api/analyze", async (req, res) => {
       imageBase64: image,
       mediaType: mediaType || "image/jpeg",
       preferences: Array.isArray(preferences) ? preferences : [],
+      language: language || "tr",
     });
     res.json({ ...result, demo: false });
   } catch (err) {
@@ -49,7 +50,7 @@ app.post("/api/analyze", async (req, res) => {
 // Yazılan malzeme listesinden yemek önerileri (fotoğrafsız)
 app.post("/api/analyze-text", async (req, res) => {
   try {
-    const { text, preferences } = req.body || {};
+    const { text, preferences, language } = req.body || {};
     if (!text || !String(text).trim()) {
       return res.status(400).json({ error: "Malzeme metni (text) gerekli." });
     }
@@ -59,6 +60,7 @@ app.post("/api/analyze-text", async (req, res) => {
     const result = await provider.impl.analyzeText({
       text: String(text),
       preferences: Array.isArray(preferences) ? preferences : [],
+      language: language || "tr",
     });
     res.json({ ...result, demo: false });
   } catch (err) {
@@ -72,7 +74,7 @@ app.post("/api/analyze-text", async (req, res) => {
 // Seçilen yemeğin detaylı tarifi
 app.post("/api/recipe", async (req, res) => {
   try {
-    const { title, detected, preferences } = req.body || {};
+    const { title, detected, preferences, language } = req.body || {};
     if (!title) {
       return res.status(400).json({ error: "Yemek adı (title) gerekli." });
     }
@@ -83,6 +85,7 @@ app.post("/api/recipe", async (req, res) => {
       title,
       detected: Array.isArray(detected) ? detected : [],
       preferences: Array.isArray(preferences) ? preferences : [],
+      language: language || "tr",
     });
     res.json({ ...recipe, demo: false });
   } catch (err) {
@@ -98,7 +101,7 @@ app.post("/api/calories", async (req, res) => {
   try {
     if (DEMO) return res.json({ ...demoCalories(), demo: true });
 
-    const { image, mediaType } = req.body || {};
+    const { image, mediaType, language } = req.body || {};
     if (!image) {
       return res.status(400).json({ error: "Fotoğraf verisi (image) gerekli." });
     }
@@ -106,12 +109,33 @@ app.post("/api/calories", async (req, res) => {
     const result = await provider.impl.analyzeCalories({
       imageBase64: image,
       mediaType: mediaType || "image/jpeg",
+      language: language || "tr",
     });
     res.json({ ...result, demo: false });
   } catch (err) {
     console.error("Kalori analizi hatası:", err);
     res.status(500).json({
       error: "Kalori tahmini yapılırken bir sorun oluştu. Lütfen tekrar deneyin.",
+    });
+  }
+});
+
+// Haftalık yemek planı
+app.post("/api/plan", async (req, res) => {
+  try {
+    if (DEMO) return res.json({ ...demoPlan(), demo: true });
+
+    const { preferences, detected, language } = req.body || {};
+    const result = await provider.impl.planWeek({
+      preferences: Array.isArray(preferences) ? preferences : [],
+      detected: Array.isArray(detected) ? detected : [],
+      language: language || "tr",
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("Plan hatası:", err);
+    res.status(500).json({
+      error: "Haftalık plan hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
 });

@@ -999,6 +999,48 @@ h2 {
   background: #2b3236;
 }
 
+/* ---------- Haftalık plan ---------- */
+.plan-btn {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  margin: 14px auto 0;
+}
+.plan-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.plan-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  font-family: inherit;
+  transition: transform 0.12s;
+}
+.plan-card:hover {
+  transform: translateY(-2px);
+}
+.plan-day {
+  flex-shrink: 0;
+  width: 84px;
+  font-weight: 800;
+  color: var(--green-dark);
+  font-size: 0.9rem;
+}
+.plan-meal h3 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
