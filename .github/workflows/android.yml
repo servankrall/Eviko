@@ -47,6 +47,12 @@ jobs:
       - name: İkon ve splash'i Android'e işle
         run: npx capacitor-assets generate --android
 
+      # Sunucu adresini APK'ya göm: kullanıcı uygulamada URL yazmaz, otomatik bağlanır.
+      # GitHub → Settings → Secrets and variables → Actions → Variables → EVIKO_API_BASE
+      - name: Sunucu adresini göm (otomatik bağlantı)
+        if: ${{ vars.EVIKO_API_BASE != '' }}
+        run: echo "window.EVIKO_API_BASE = \"${{ vars.EVIKO_API_BASE }}\";" > public/config.js
+
       - name: Web varlıklarını senkronize et
         run: npx cap sync android
 

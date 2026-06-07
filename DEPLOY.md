@@ -33,10 +33,32 @@ yazarsan, telefonun da bu siteye bağlanır (hesap, yorum, ana sayfa dahil).
    `https://<adın>.onrender.com`
 3. Çıkan **Client ID**'yi Render'da `GOOGLE_CLIENT_ID` olarak gir → yeniden deploy.
 
+## 💾 Veriyi kalıcı yap (silinmesin) — ücretsiz
+Render ücretsiz planında dosya sistemi her dağıtımda sıfırlanır. Hesap ve
+yorumların **kalıcı** olması için ücretsiz bir Postgres bağla (Eviko bağlanınca
+verileri orada tutar):
+
+1. **[neon.tech](https://neon.tech)** (veya [supabase.com](https://supabase.com)) →
+   ücretsiz hesap → yeni proje → **Connection string**'i kopyala
+   (`postgres://...` ile başlar).
+2. Render → servisin → **Environment** → yeni değişken:
+   `DATABASE_URL` = kopyaladığın bağlantı dizesi.
+3. Kaydet → otomatik yeniden deploy. Artık veriler kalıcı; bir daha silinmez.
+
+> Bağlantı dizesi `?sslmode=require` içermese de Eviko SSL ile bağlanır.
+
+## 📱 Mobilde otomatik bağlantı (URL yazmaya gerek yok)
+Kullanıcıların uygulamada sunucu adresi yazmasına gerek kalmadan, APK doğrudan
+sitene bağlansın:
+
+1. GitHub → depo → **Settings → Secrets and variables → Actions → Variables →
+   New repository variable**.
+2. Ad: `EVIKO_API_BASE`, Değer: `https://<adın>.onrender.com`.
+3. Sonraki APK derlemesi bu adresi otomatik gömer; indiren herkes hiçbir şey
+   yazmadan bağlanır.
+
+> Alternatif: adresi bana söyle, `public/config.js`'e ben gömeyim — aynı sonuç.
+
 ## Notlar
 - **Ücretsiz plan uykuya geçer:** uzun süre kullanılmazsa ilk istek birkaç saniye
   gecikir (servis uyanır).
-- **Veri kalıcılığı:** Ücretsiz planda dosya sistemi her dağıtımda sıfırlanır;
-  yani hesap/yorumlar yeniden deploy'da silinebilir. Kalıcı tutmak için Render'da
-  bir **Disk** ekleyip (ücretli) mount yolunu `EVIKO_DATA_DIR` olarak ver
-  (ör. `/data`), ya da ileride bir veritabanına geçeriz.

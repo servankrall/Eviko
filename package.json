@@ -27,7 +27,8 @@
     "@capacitor/android": "^8.4.0",
     "@capacitor/core": "^8.4.0",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "pg": "^8.21.0"
   },
   "engines": {
     "node": ">=20"
