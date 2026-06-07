@@ -8,6 +8,7 @@ const screens = {
   calories: el("screen-calories"),
   favorites: el("screen-favorites"),
   shopping: el("screen-shopping"),
+  history: el("screen-history"),
 };
 
 // ---- Durum ----
@@ -35,6 +36,8 @@ const store = {
 };
 let favorites = store.get("eviko_favorites", []);
 let shopping = store.get("eviko_shopping", []);
+let prefs = store.get("eviko_prefs", []);
+let history = store.get("eviko_history", []);
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -56,6 +59,9 @@ function showScreen(name) {
 init();
 function init() {
   registerServiceWorker();
+  applyTheme();
+  initPrefs();
+  setMode(mode);
   updateBadges();
   checkHealth();
 }
@@ -64,6 +70,33 @@ function registerServiceWorker() {
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
+}
+
+// ---- Tema (açık/koyu/otomatik) ----
+function applyTheme() {
+  const t = localStorage.getItem("eviko_theme") || "auto";
+  const dark =
+    t === "dark" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+try {
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if ((localStorage.getItem("eviko_theme") || "auto") === "auto") applyTheme();
+  });
+} catch {}
+
+// ---- Diyet tercihleri ----
+function initPrefs() {
+  document.querySelectorAll(".pref-chip").forEach((chip) => {
+    if (prefs.includes(chip.dataset.pref)) chip.classList.add("active");
+    chip.addEventListener("click", () => {
+      const p = chip.dataset.pref;
+      if (prefs.includes(p)) prefs = prefs.filter((x) => x !== p);
+      else prefs.push(p);
+      store.set("eviko_prefs", prefs);
+      chip.classList.toggle("active");
+    });
+  });
 }
 
 async function checkHealth() {
@@ -100,6 +133,9 @@ function setMode(m) {
   mode = m;
   el("mode-ingredients").classList.toggle("active", m === "ingredients");
   el("mode-dish").classList.toggle("active", m === "dish");
+  const ing = m === "ingredients";
+  el("prefs-row").classList.toggle("hidden", !ing);
+  el("manual-entry").classList.toggle("hidden", !ing);
   if (m === "ingredients") {
     el("hero-emoji").textContent = "📸🥕🍅";
     el("hero-title").textContent = "Sebzelerinin fotoğrafını çek";
@@ -196,12 +232,37 @@ async function runIngredients() {
   el("loading-sub").textContent = "Malzemeler tanınıyor ve tarifler hazırlanıyor.";
   try {
     const data = useGemini()
-      ? await window.GeminiClient.analyze(selectedImage.base64, selectedImage.mediaType)
+      ? await window.GeminiClient.analyze(selectedImage.base64, selectedImage.mediaType, prefs)
       : await serverPost("/api/analyze", {
           image: selectedImage.base64,
           mediaType: selectedImage.mediaType,
+          preferences: prefs,
         });
     renderResults(data);
+    saveHistory("ingredients", data);
+    showScreen("results");
+  } catch (err) {
+    fail(err);
+  }
+}
+
+// ---- Malzemeleri yazarak ara (fotoğrafsız) ----
+el("manual-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = el("manual-input").value.trim();
+  if (text) runManual(text);
+});
+
+async function runManual(text) {
+  showScreen("loading");
+  el("loading-text").textContent = "Malzemeler değerlendiriliyor…";
+  el("loading-sub").textContent = "Sana uygun yemekler hazırlanıyor.";
+  try {
+    const data = useGemini()
+      ? await window.GeminiClient.analyzeText(text, prefs)
+      : await serverPost("/api/analyze-text", { text, preferences: prefs });
+    renderResults(data);
+    saveHistory("ingredients", data);
     showScreen("results");
   } catch (err) {
     fail(err);
@@ -220,6 +281,7 @@ async function runCalories() {
           mediaType: selectedImage.mediaType,
         });
     renderCalories(data);
+    saveHistory("dish", data);
     showScreen("calories");
   } catch (err) {
     fail(err);
@@ -352,13 +414,19 @@ function renderCalories(data) {
 
 // ---- Tarif detayı (modal) ----
 const modal = el("modal");
-el("modal-close").addEventListener("click", () => modal.classList.add("hidden"));
+function closeRecipeModal() {
+  modal.classList.add("hidden");
+  try {
+    if (window.speechSynthesis) speechSynthesis.cancel();
+  } catch {}
+}
+el("modal-close").addEventListener("click", closeRecipeModal);
 modal.addEventListener("click", (e) => {
-  if (e.target === modal) modal.classList.add("hidden");
+  if (e.target === modal) closeRecipeModal();
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    modal.classList.add("hidden");
+    closeRecipeModal();
     el("settings-modal").classList.add("hidden");
   }
 });
@@ -371,8 +439,8 @@ async function openRecipeByTitle(title) {
   modal.classList.remove("hidden");
   try {
     const data = useGemini()
-      ? await window.GeminiClient.recipe(title, detectedNames)
-      : await serverPost("/api/recipe", { title, detected: detectedNames });
+      ? await window.GeminiClient.recipe(title, detectedNames, prefs)
+      : await serverPost("/api/recipe", { title, detected: detectedNames, preferences: prefs });
     openRecipeObject(data);
   } catch (err) {
     el("modal-body").innerHTML = `<div class="detail-loading"><p>${escapeHtml(
@@ -413,6 +481,7 @@ function renderRecipeDetail() {
       <div class="detail-meta">
         ${r.durationMinutes ? `<span class="tag">⏱ ${r.durationMinutes} dk</span>` : ""}
         ${r.difficulty ? `<span class="tag easy">${escapeHtml(r.difficulty)}</span>` : ""}
+        ${r.caloriesPerServing ? `<span class="tag cat">🔥 ~${r.caloriesPerServing} kcal/porsiyon</span>` : ""}
       </div>
 
       <div class="portion">
@@ -429,6 +498,8 @@ function renderRecipeDetail() {
           ${favOn ? "⭐ Favorilerde" : "☆ Favorilere ekle"}
         </button>
         <button class="btn btn-ghost" id="btn-to-shop">🛒 Malzemeleri ekle</button>
+        <button class="btn btn-ghost" id="btn-speak">🔊 Sesli oku</button>
+        <button class="btn btn-ghost" id="btn-share">📤 Paylaş</button>
       </div>
 
       <div class="detail-section">
@@ -459,6 +530,8 @@ function renderRecipeDetail() {
     addToShopping(items);
     toast("Malzemeler listeye eklendi 🛒");
   };
+  el("btn-speak").onclick = () => toggleSpeak(r);
+  el("btn-share").onclick = () => shareRecipe(r);
   modal.querySelector(".modal-card").scrollTop = 0;
 }
 
@@ -606,6 +679,7 @@ el("nav-settings").addEventListener("click", () => {
   el("gemini-model-select").value =
     localStorage.getItem("eviko_gemini_model") || "gemini-2.5-flash";
   el("api-base-input").value = localStorage.getItem("eviko_api_base") || "";
+  el("theme-select").value = localStorage.getItem("eviko_theme") || "auto";
   settingsModal.classList.remove("hidden");
 });
 el("settings-close").addEventListener("click", () => settingsModal.classList.add("hidden"));
@@ -620,6 +694,8 @@ el("settings-save").addEventListener("click", () => {
   localStorage.setItem("eviko_gemini_model", el("gemini-model-select").value);
   if (v) localStorage.setItem("eviko_api_base", v);
   else localStorage.removeItem("eviko_api_base");
+  localStorage.setItem("eviko_theme", el("theme-select").value);
+  applyTheme();
   settingsModal.classList.add("hidden");
   checkHealth();
   toast("Ayarlar kaydedildi ✓");
@@ -631,9 +707,142 @@ el("settings-clear").addEventListener("click", () => {
   el("gemini-key-input").value = "";
   el("gemini-model-select").value = "gemini-2.5-flash";
   el("api-base-input").value = "";
+  localStorage.removeItem("eviko_theme");
+  el("theme-select").value = "auto";
+  applyTheme();
   checkHealth();
   toast("Ayarlar temizlendi");
 });
+
+// ---- Geçmiş ----
+function saveHistory(type, data) {
+  const title =
+    type === "dish"
+      ? data.dishName || "Yemek"
+      : (data.detected || [])
+          .map((d) => d.name)
+          .slice(0, 4)
+          .join(", ") || "Malzeme analizi";
+  if (type === "ingredients" && (!data.recipes || data.recipes.length === 0)) return;
+  history.unshift({ type, title, ts: Date.now(), data });
+  history = history.slice(0, 30);
+  store.set("eviko_history", history);
+}
+
+function renderHistory() {
+  const list = el("history-list");
+  el("btn-clear-history").classList.toggle("hidden", history.length === 0);
+  if (history.length === 0) {
+    list.innerHTML =
+      '<div class="list-empty">Henüz geçmiş yok.<br>Bir analiz yaptığında burada görünür.</div>';
+    return;
+  }
+  list.innerHTML = history
+    .map((h, i) => {
+      const icon = h.type === "dish" ? "🔥" : "🥗";
+      const sub = h.type === "dish" ? "Kalori analizi" : "Yemek önerileri";
+      const date = new Date(h.ts).toLocaleString("tr-TR", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `
+      <div class="hist-item">
+        <div class="hist-main" data-index="${i}">
+          <h3>${icon} ${escapeHtml(h.title)}</h3>
+          <div class="muted small">${sub} · ${date}</div>
+        </div>
+        <button class="remove" data-remove="${i}" aria-label="Sil">🗑️</button>
+      </div>`;
+    })
+    .join("");
+  list.querySelectorAll(".hist-main").forEach((m) =>
+    m.addEventListener("click", () => openHistory(history[Number(m.dataset.index)]))
+  );
+  list.querySelectorAll("[data-remove]").forEach((b) =>
+    b.addEventListener("click", () => {
+      history.splice(Number(b.dataset.remove), 1);
+      store.set("eviko_history", history);
+      renderHistory();
+    })
+  );
+}
+
+function openHistory(h) {
+  if (h.type === "dish") {
+    renderCalories(h.data);
+    showScreen("calories");
+  } else {
+    detectedNames = (h.data.detected || []).map((d) => d.name);
+    renderResults(h.data);
+    showScreen("results");
+  }
+}
+
+el("nav-history").addEventListener("click", () => {
+  renderHistory();
+  showScreen("history");
+});
+el("btn-clear-history").addEventListener("click", () => {
+  if (confirm("Tüm geçmiş silinsin mi?")) {
+    history = [];
+    store.set("eviko_history", history);
+    renderHistory();
+  }
+});
+
+// ---- Sesli okuma + paylaşım ----
+function toggleSpeak(r) {
+  const btn = el("btn-speak");
+  if (!("speechSynthesis" in window)) {
+    toast("Cihaz sesli okumayı desteklemiyor.");
+    return;
+  }
+  if (speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+    if (btn) btn.textContent = "🔊 Sesli oku";
+    return;
+  }
+  const text =
+    `${r.title}. Malzemeler: ` +
+    (r.ingredients || []).map((i) => i.item).join(", ") +
+    ". Hazırlanışı: " +
+    (r.steps || []).map((s, i) => `${i + 1}. adım. ${s}`).join(" ");
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "tr-TR";
+  u.onend = () => {
+    if (el("btn-speak")) el("btn-speak").textContent = "🔊 Sesli oku";
+  };
+  u.onerror = u.onend;
+  if (btn) btn.textContent = "⏹ Durdur";
+  speechSynthesis.speak(u);
+}
+
+async function shareRecipe(r) {
+  const lines = [r.title, ""];
+  lines.push("Malzemeler:");
+  (r.ingredients || []).forEach((i) => {
+    let amt = i.toTaste
+      ? "damak zevkine göre"
+      : i.quantity
+        ? `${formatQty(i.quantity)} ${i.unit || ""}`.trim()
+        : i.unit || "";
+    lines.push("• " + i.item + (amt ? ` — ${amt}` : ""));
+  });
+  lines.push("", "Hazırlanışı:");
+  (r.steps || []).forEach((s, idx) => lines.push(`${idx + 1}. ${s}`));
+  lines.push("", "Eviko ile hazırlandı 🥗");
+  const text = lines.join("\n");
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: r.title, text });
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast("Tarif kopyalandı 📋");
+    }
+  } catch {}
+}
 
 // ---- Yardımcılar ----
 function formatQty(n) {

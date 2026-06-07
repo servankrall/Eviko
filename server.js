@@ -27,7 +27,7 @@ app.post("/api/analyze", async (req, res) => {
   try {
     if (DEMO) return res.json({ ...demoAnalyze(), demo: true });
 
-    const { image, mediaType } = req.body || {};
+    const { image, mediaType, preferences } = req.body || {};
     if (!image) {
       return res.status(400).json({ error: "Fotoğraf verisi (image) gerekli." });
     }
@@ -35,6 +35,7 @@ app.post("/api/analyze", async (req, res) => {
     const result = await provider.impl.analyzeImage({
       imageBase64: image,
       mediaType: mediaType || "image/jpeg",
+      preferences: Array.isArray(preferences) ? preferences : [],
     });
     res.json({ ...result, demo: false });
   } catch (err) {
@@ -45,10 +46,33 @@ app.post("/api/analyze", async (req, res) => {
   }
 });
 
+// Yazılan malzeme listesinden yemek önerileri (fotoğrafsız)
+app.post("/api/analyze-text", async (req, res) => {
+  try {
+    const { text, preferences } = req.body || {};
+    if (!text || !String(text).trim()) {
+      return res.status(400).json({ error: "Malzeme metni (text) gerekli." });
+    }
+
+    if (DEMO) return res.json({ ...demoAnalyze(), demo: true });
+
+    const result = await provider.impl.analyzeText({
+      text: String(text),
+      preferences: Array.isArray(preferences) ? preferences : [],
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("Metin analizi hatası:", err);
+    res.status(500).json({
+      error: "Öneriler hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
+    });
+  }
+});
+
 // Seçilen yemeğin detaylı tarifi
 app.post("/api/recipe", async (req, res) => {
   try {
-    const { title, detected } = req.body || {};
+    const { title, detected, preferences } = req.body || {};
     if (!title) {
       return res.status(400).json({ error: "Yemek adı (title) gerekli." });
     }
@@ -58,6 +82,7 @@ app.post("/api/recipe", async (req, res) => {
     const recipe = await provider.impl.getRecipe({
       title,
       detected: Array.isArray(detected) ? detected : [],
+      preferences: Array.isArray(preferences) ? preferences : [],
     });
     res.json({ ...recipe, demo: false });
   } catch (err) {

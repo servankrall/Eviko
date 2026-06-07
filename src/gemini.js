@@ -68,18 +68,36 @@ Yanıtı SADECE şu JSON yapısında ver (başka metin ekleme):
   }]
 }`;
 
-export async function analyzeImage({ imageBase64, mediaType }) {
+function prefText(preferences) {
+  return preferences && preferences.length
+    ? ` Diyet tercihleri: ${preferences.join(", ")}. Önerileri ve tarifi bunlara kesinlikle uygun yap.`
+    : "";
+}
+
+export async function analyzeImage({ imageBase64, mediaType, preferences = [] }) {
   const prompt =
     "Bu fotoğraftaki tüm sebze ve meyveleri tanımla. Sonra bu malzemelerle " +
     "(tuz, yağ, soğan, sarımsak, un, yumurta, baharat gibi temel malzemeler evde " +
     "var sayılır) yapılabilecek 6-8 çeşitli pratik yemek öner. Çorba, ana yemek, " +
     "salata, kahvaltılık gibi farklı türlerde olsun. Fotoğrafta sebze/meyve yoksa " +
     "'detected' listesini boş bırak." +
+    prefText(preferences) +
     ANALYZE_SHAPE;
   return callGemini([
     { inlineData: { mimeType: mediaType, data: imageBase64 } },
     { text: prompt },
   ]);
+}
+
+export async function analyzeText({ text, preferences = [] }) {
+  const prompt =
+    `Kullanıcının elindeki malzemeler: ${text}. Bu malzemelerle yapılabilecek 6-8 ` +
+    "çeşitli pratik yemek öner (tuz, yağ, soğan, sarımsak, un, yumurta, baharat evde " +
+    "var sayılır). 'detected' alanına kullanıcının yazdığı malzemeleri uygun emoji ve " +
+    "confidence 'yüksek' ile koy." +
+    prefText(preferences) +
+    ANALYZE_SHAPE;
+  return callGemini([{ text: prompt }]);
 }
 
 // 2) Tarif detayı (ölçeklenebilir porsiyon)
@@ -90,18 +108,21 @@ Yanıtı SADECE şu JSON yapısında ver:
   "servings": 2,
   "durationMinutes": 30,
   "difficulty": "kolay|orta|zor",
+  "caloriesPerServing": 420,
   "ingredients": [{"item": "malzeme", "quantity": 2, "unit": "adet|su bardağı|yemek kaşığı|g|ml", "toTaste": false}],
   "steps": ["sıralı pişirme adımları"],
   "tips": ["1-3 ipucu"]
 }
 Not: "toTaste" true olanlarda (tuz, baharat) "quantity" 0 olabilir.`;
 
-export async function getRecipe({ title, detected = [] }) {
+export async function getRecipe({ title, detected = [], preferences = [] }) {
   const elde = detected.length ? `Evde şu malzemeler var: ${detected.join(", ")}. ` : "";
   const prompt =
     `"${title}" adlı yemeğin detaylı, adım adım tarifini ver. ${elde}` +
     "Tarifi 2-4 kişilik temel al ve 'servings' alanına yaz. Malzeme miktarlarını " +
-    "sayısal 'quantity' + 'unit' ile, damak zevkine göre olanları 'toTaste': true ile belirt." +
+    "sayısal 'quantity' + 'unit' ile, damak zevkine göre olanları 'toTaste': true ile belirt. " +
+    "Porsiyon başına tahmini kaloriyi 'caloriesPerServing' (sayı) olarak ver." +
+    prefText(preferences) +
     RECIPE_SHAPE;
   return callGemini([{ text: prompt }]);
 }

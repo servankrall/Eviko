@@ -81,6 +81,7 @@ export function demoRecipe(title) {
     servings: 2,
     durationMinutes: 20,
     difficulty: "kolay",
+    caloriesPerServing: 280,
     ingredients: [
       { item: "Domates", quantity: 3, unit: "adet", toTaste: false },
       { item: "Yeşil biber", quantity: 2, unit: "adet", toTaste: false },

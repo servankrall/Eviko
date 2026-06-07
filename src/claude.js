@@ -38,6 +38,12 @@ const PERSONA =
 // 1) Fotoğraf analizi: malzemeleri tanı + birçok yemek önerisi üret
 // ---------------------------------------------------------------------------
 
+function prefText(preferences) {
+  return preferences && preferences.length
+    ? ` Diyet tercihleri: ${preferences.join(", ")}. Önerileri ve tarifi bunlara kesinlikle uygun yap.`
+    : "";
+}
+
 const ANALYZE_SCHEMA = {
   type: "object",
   properties: {
@@ -116,7 +122,7 @@ const ANALYZE_INSTRUCTION =
  * Fotoğrafı analiz eder, malzemeleri ve yemek önerilerini döndürür.
  * @param {{ imageBase64: string, mediaType: string }} args
  */
-export async function analyzeImage({ imageBase64, mediaType }) {
+export async function analyzeImage({ imageBase64, mediaType, preferences = [] }) {
   const message = await getClient().messages.create({
     model: MODEL,
     max_tokens: 4096,
@@ -130,13 +136,35 @@ export async function analyzeImage({ imageBase64, mediaType }) {
             type: "image",
             source: { type: "base64", media_type: mediaType, data: imageBase64 },
           },
-          { type: "text", text: ANALYZE_INSTRUCTION },
+          { type: "text", text: ANALYZE_INSTRUCTION + prefText(preferences) },
         ],
       },
     ],
     output_config: { format: { type: "json_schema", schema: ANALYZE_SCHEMA } },
   });
 
+  return parseJson(message);
+}
+
+/**
+ * Yazılan malzeme listesinden yemek önerileri üretir (fotoğrafsız).
+ * @param {{ text: string, preferences?: string[] }} args
+ */
+export async function analyzeText({ text, preferences = [] }) {
+  const instruction =
+    `Kullanıcının elindeki malzemeler: ${text}. Bu malzemelerle yapılabilecek 6-8 ` +
+    "farklı pratik yemek öner (tuz, yağ, soğan, sarımsak, un, yumurta, baharat evde " +
+    "var sayılır). 'detected' alanına kullanıcının yazdığı malzemeleri uygun emoji ve " +
+    "confidence 'yüksek' ile koy." +
+    prefText(preferences);
+  const message = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    thinking: { type: "adaptive" },
+    system: PERSONA,
+    messages: [{ role: "user", content: instruction }],
+    output_config: { format: { type: "json_schema", schema: ANALYZE_SCHEMA } },
+  });
   return parseJson(message);
 }
 
@@ -151,6 +179,7 @@ const RECIPE_SCHEMA = {
     servings: { type: "integer", description: "Tarifin temel alındığı kişi sayısı (2-4 arası)" },
     durationMinutes: { type: "integer", description: "Toplam süre (dakika)" },
     difficulty: { type: "string", enum: ["kolay", "orta", "zor"] },
+    caloriesPerServing: { type: "integer", description: "Porsiyon başına tahmini kalori (kcal)" },
     ingredients: {
       type: "array",
       items: {
@@ -178,15 +207,24 @@ const RECIPE_SCHEMA = {
     steps: { type: "array", description: "Sıralı pişirme adımları", items: { type: "string" } },
     tips: { type: "array", description: "Faydalı ipuçları (1-3 adet)", items: { type: "string" } },
   },
-  required: ["title", "servings", "durationMinutes", "difficulty", "ingredients", "steps", "tips"],
+  required: [
+    "title",
+    "servings",
+    "durationMinutes",
+    "difficulty",
+    "caloriesPerServing",
+    "ingredients",
+    "steps",
+    "tips",
+  ],
   additionalProperties: false,
 };
 
 /**
  * Seçilen yemeğin detaylı tarifini üretir.
- * @param {{ title: string, detected?: string[] }} args
+ * @param {{ title: string, detected?: string[], preferences?: string[] }} args
  */
-export async function getRecipe({ title, detected = [] }) {
+export async function getRecipe({ title, detected = [], preferences = [] }) {
   const elde =
     detected.length > 0 ? `Evde şu malzemeler var: ${detected.join(", ")}.` : "";
 
@@ -195,7 +233,9 @@ export async function getRecipe({ title, detected = [] }) {
     "Tarifi 2-4 kişilik temel al ve bu kişi sayısını 'servings' alanına yaz. " +
     "Malzeme miktarlarını ölçeklenebilir biçimde ver: her malzeme için sayısal " +
     "'quantity', birim için 'unit' ve damak zevkine göre olanlar için 'toTaste' " +
-    "true olsun. Net pişirme adımları ve birkaç pratik ipucu ekle.";
+    "true olsun. Porsiyon başına tahmini kaloriyi 'caloriesPerServing' olarak ver. " +
+    "Net pişirme adımları ve birkaç pratik ipucu ekle." +
+    prefText(preferences);
 
   const message = await getClient().messages.create({
     model: MODEL,

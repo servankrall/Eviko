@@ -20,6 +20,12 @@
     return [chosen, ...FALLBACK_MODELS.filter((m) => m !== chosen)];
   }
 
+  function prefsLine(prefs) {
+    return prefs && prefs.length
+      ? `\nDiyet tercihleri: ${prefs.join(", ")}. Tüm önerileri ve tarifi bunlara KESİNLİKLE uygun yap.`
+      : "";
+  }
+
   const PERSONA =
     "Sen Eviko adlı sıcak, pratik bir mutfak asistanısın. Sebze/meyve " +
     "fotoğraflarından pratik yemekler önerir, hazır yemeklerin kalorisini tahmin " +
@@ -141,10 +147,10 @@ Yanıtı SADECE şu JSON yapısında ver:
 
   const RECIPE_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
-{"title":"ad","servings":2,"durationMinutes":30,"difficulty":"kolay|orta|zor",
+{"title":"ad","servings":2,"durationMinutes":30,"difficulty":"kolay|orta|zor","caloriesPerServing":420,
 "ingredients":[{"item":"malzeme","quantity":2,"unit":"adet|su bardağı|yemek kaşığı|g|ml","toTaste":false}],
 "steps":["..."],"tips":["..."]}
-"toTaste" true olanlarda "quantity" 0 olabilir.`;
+"toTaste" true olanlarda "quantity" 0 olabilir. "caloriesPerServing" porsiyon başı tahmini kaloridir.`;
 
   const CALORIE_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
@@ -152,21 +158,37 @@ Yanıtı SADECE şu JSON yapısında ver:
 "components":[{"name":"bileşen","emoji":"tek emoji","calories":120}],
 "macros":{"proteinG":10,"carbsG":40,"fatG":12},"healthNote":"kısa not"}`;
 
-  async function analyze(imageBase64, mediaType) {
+  async function analyze(imageBase64, mediaType, prefs = []) {
     const prompt =
       "Bu fotoğraftaki sebze ve meyveleri tanımla. Sonra bunlarla (tuz, yağ, " +
       "soğan, sarımsak, un, yumurta, baharat evde var sayılır) yapılabilecek 6-8 " +
       "çeşitli pratik yemek öner (çorba, ana yemek, salata, kahvaltılık vb.). " +
-      "Fotoğrafta sebze/meyve yoksa 'detected' boş olsun." + ANALYZE_SHAPE;
+      "Fotoğrafta sebze/meyve yoksa 'detected' boş olsun." +
+      prefsLine(prefs) +
+      ANALYZE_SHAPE;
     return call([{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }]);
   }
 
-  async function recipe(title, detected = []) {
+  async function analyzeText(text, prefs = []) {
+    const prompt =
+      `Kullanıcının elindeki malzemeler: ${text}. Bu malzemelerle (tuz, yağ, soğan, ` +
+      "sarımsak, un, yumurta, baharat evde var sayılır) yapılabilecek 6-8 çeşitli " +
+      "pratik yemek öner. 'detected' alanına kullanıcının yazdığı malzemeleri uygun " +
+      "emoji ve confidence:'yüksek' ile koy." +
+      prefsLine(prefs) +
+      ANALYZE_SHAPE;
+    return call([{ text: prompt }]);
+  }
+
+  async function recipe(title, detected = [], prefs = []) {
     const elde = detected.length ? `Evde şunlar var: ${detected.join(", ")}. ` : "";
     const prompt =
       `"${title}" yemeğinin detaylı, adım adım tarifini ver. ${elde}` +
       "2-4 kişilik temel al ('servings'). Miktarları sayısal 'quantity' + 'unit' ile, " +
-      "damak zevkine göre olanları 'toTaste': true ile belirt." + RECIPE_SHAPE;
+      "damak zevkine göre olanları 'toTaste': true ile belirt. Porsiyon başına " +
+      "tahmini kaloriyi 'caloriesPerServing' (sayı) olarak ver." +
+      prefsLine(prefs) +
+      RECIPE_SHAPE;
     return call([{ text: prompt }]);
   }
 
@@ -179,5 +201,5 @@ Yanıtı SADECE şu JSON yapısında ver:
     return call([{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }]);
   }
 
-  window.GeminiClient = { hasKey, analyze, recipe, calories };
+  window.GeminiClient = { hasKey, analyze, analyzeText, recipe, calories };
 })();

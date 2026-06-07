@@ -33,6 +33,7 @@
         <button class="icon-btn" id="nav-shopping" aria-label="Alışveriş listesi" title="Alışveriş listesi">
           🛒<span class="badge hidden" id="badge-shop">0</span>
         </button>
+        <button class="icon-btn" id="nav-history" aria-label="Geçmiş" title="Geçmiş">🕘</button>
         <button class="icon-btn" id="nav-settings" aria-label="Ayarlar" title="Ayarlar">⚙️</button>
       </div>
     </header>
@@ -43,6 +44,15 @@
         <div class="mode-switch" role="tablist">
           <button class="mode-btn active" id="mode-ingredients" role="tab">🥕 Malzemelerim</button>
           <button class="mode-btn" id="mode-dish" role="tab">🍽️ Tabaktaki yemek</button>
+        </div>
+
+        <div id="prefs-row" class="prefs-row">
+          <span class="prefs-label">Tercih:</span>
+          <button class="pref-chip" data-pref="Vejetaryen">Vejetaryen</button>
+          <button class="pref-chip" data-pref="Vegan">Vegan</button>
+          <button class="pref-chip" data-pref="Glutensiz">Glutensiz</button>
+          <button class="pref-chip" data-pref="Az kalori">Az kalori</button>
+          <button class="pref-chip" data-pref="Az malzeme">Az malzeme</button>
         </div>
 
         <div class="hero">
@@ -69,6 +79,19 @@
             <button id="btn-retake" class="btn btn-ghost">Değiştir</button>
             <button id="btn-analyze" class="btn btn-primary">Yemekleri bul</button>
           </div>
+        </div>
+
+        <div id="manual-entry" class="manual-entry">
+          <div class="manual-sep"><span>veya</span></div>
+          <form id="manual-form" class="manual-form">
+            <input
+              id="manual-input"
+              type="text"
+              placeholder="Malzemeleri yaz: domates, biber, yumurta…"
+              autocomplete="off"
+            />
+            <button class="btn btn-ghost" type="submit">Ara</button>
+          </form>
         </div>
       </section>
 
@@ -134,6 +157,16 @@
         <ul id="shopping-list" class="shopping-list"></ul>
         <button id="btn-clear-shop" class="btn btn-ghost small hidden">Tümünü temizle</button>
       </section>
+
+      <!-- 7) Geçmiş -->
+      <section id="screen-history" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>🕘 Geçmiş</h2>
+        </div>
+        <div id="history-list"></div>
+        <button id="btn-clear-history" class="btn btn-ghost small hidden">Geçmişi temizle</button>
+      </section>
     </main>
 
     <!-- Tarif detayı -->
@@ -182,6 +215,13 @@
             autocomplete="off"
           />
         </details>
+
+        <label class="field-label" for="theme-select">Tema</label>
+        <select id="theme-select">
+          <option value="auto">Otomatik (cihaza göre)</option>
+          <option value="light">Açık</option>
+          <option value="dark">Koyu</option>
+        </select>
 
         <div class="settings-actions">
           <button id="settings-save" class="btn btn-primary">Kaydet</button>
