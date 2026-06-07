@@ -42,6 +42,16 @@
     <main id="app">
       <!-- 1) Fotoğraf seçme / çekme -->
       <section id="screen-capture" class="screen">
+        <form id="search-form" class="search-form">
+          <input
+            id="search-input"
+            type="text"
+            placeholder="🔎 Bir yemek ara: lazanya, mercimek çorbası…"
+            autocomplete="off"
+          />
+          <button class="btn btn-primary" type="submit">Ara</button>
+        </form>
+
         <div class="mode-switch" role="tablist">
           <button class="mode-btn active" id="mode-ingredients" role="tab">🥕 Malzemelerim</button>
           <button class="mode-btn" id="mode-dish" role="tab">🍽️ Tabaktaki yemek</button>
@@ -63,6 +73,7 @@
             Evdeki sebze ve meyveleri bir araya getir, fotoğrafını çek. Eviko
             onları tanıyıp sana <strong>birçok pratik yemek</strong> önersin.
           </p>
+          <button id="btn-install" class="btn btn-ghost hidden">📲 Uygulamayı yükle</button>
         </div>
 
         <label class="dropzone" id="dropzone">
@@ -96,6 +107,19 @@
         </div>
 
         <button id="btn-plan" class="btn btn-ghost plan-btn">📅 Haftalık yemek planı</button>
+
+        <div id="pantry-box" class="pantry-box">
+          <h2>🧊 Buzdolabım</h2>
+          <p class="muted small">Sık kullandığın malzemeleri kaydet; tek dokunuşla onlardan yemek öner.</p>
+          <form id="pantry-form" class="pantry-form">
+            <input id="pantry-input" type="text" placeholder="Malzeme ekle (ör. yumurta)" autocomplete="off" />
+            <button class="btn btn-ghost" type="submit">Ekle</button>
+          </form>
+          <div id="pantry-chips" class="chips"></div>
+          <button id="btn-pantry-suggest" class="btn btn-primary hidden pantry-suggest">
+            Buzdolabımdan öner
+          </button>
+        </div>
 
         <div id="home-sections" class="home-sections hidden">
           <div class="home-sec hidden" id="home-daily">
