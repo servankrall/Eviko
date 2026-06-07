@@ -30,14 +30,15 @@ export function parseCookies(req) {
   return out;
 }
 
-export function setSessionCookie(res, token) {
-  res.setHeader(
-    "Set-Cookie",
-    `eviko_sid=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`
-  );
+export function setSessionCookie(res, token, secure) {
+  const attrs =
+    `HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 30}; ` +
+    (secure ? "SameSite=None; Secure" : "SameSite=Lax");
+  res.setHeader("Set-Cookie", `eviko_sid=${token}; ${attrs}`);
 }
-export function clearSessionCookie(res) {
-  res.setHeader("Set-Cookie", "eviko_sid=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax");
+export function clearSessionCookie(res, secure) {
+  const attrs = "HttpOnly; Path=/; Max-Age=0; " + (secure ? "SameSite=None; Secure" : "SameSite=Lax");
+  res.setHeader("Set-Cookie", `eviko_sid=; ${attrs}`);
 }
 
 export function googleEnabled() {

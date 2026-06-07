@@ -1,8 +1,9 @@
-// Sunucu (API) adresi yapılandırması.
-//
-// Web'de boş bırakın — istekler aynı sunucuya (göreli yol) gider.
-// APK/mobil uygulamada, Eviko sunucunuzun adresini buraya yazabilir
-// VEYA uygulama içindeki ⚙️ Ayarlar'dan girebilirsiniz.
-//
-// Örnek: window.EVIKO_API_BASE = "https://eviko-sunucum.example.com";
-window.EVIKO_API_BASE = "";
+// Sunucu (API) adresi.
+// - Web'de (siteyi sunan sunucu) boş = göreli yol (aynı origin).
+// - Mobil (Capacitor/APK) içinde otomatik olarak canlı sunucuya bağlanır;
+//   kullanıcı hiçbir adres yazmak zorunda kalmaz.
+// İstenirse uygulama içi ⚙️ Ayarlar'dan (eviko_api_base) yine değiştirilebilir.
+(function () {
+  var isNative = !!(window.Capacitor || (location.protocol || "").indexOf("capacitor") === 0);
+  window.EVIKO_API_BASE = isNative ? "https://eviko.onrender.com" : "";
+})();

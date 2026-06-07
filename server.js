@@ -27,6 +27,24 @@ const DEMO = !provider;
 // Base64 görüntüler büyük olabildiği için JSON limitini yükseltiyoruz.
 app.use(express.json({ limit: "20mb" }));
 
+// Mobil (Capacitor) farklı origin'den bağlanır → çerezli CORS gerekir.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+function isHttps(req) {
+  return req.secure || req.headers["x-forwarded-proto"] === "https";
+}
+
 // Oturumu çereze göre yükle (req.user)
 app.use((req, _res, next) => {
   const token = parseCookies(req).eviko_sid;
@@ -189,7 +207,7 @@ app.post("/api/auth/register", (req, res) => {
     return res.status(409).json({ error: "Bu e-posta zaten kayıtlı." });
   }
   const user = db.createUser({ email, name, passHash: hashPassword(password) });
-  setSessionCookie(res, db.createSession(user.id));
+  setSessionCookie(res, db.createSession(user.id), isHttps(req));
   res.json({ user: db.publicUser(user) });
 });
 
@@ -199,13 +217,13 @@ app.post("/api/auth/login", (req, res) => {
   if (!user || !user.passHash || !verifyPassword(password, user.passHash)) {
     return res.status(401).json({ error: "E-posta veya şifre hatalı." });
   }
-  setSessionCookie(res, db.createSession(user.id));
+  setSessionCookie(res, db.createSession(user.id), isHttps(req));
   res.json({ user: db.publicUser(user) });
 });
 
 app.post("/api/auth/logout", (req, res) => {
   db.deleteSession(req.sessionToken);
-  clearSessionCookie(res);
+  clearSessionCookie(res, isHttps(req));
   res.json({ ok: true });
 });
 
@@ -215,7 +233,7 @@ app.post("/api/auth/google", async (req, res) => {
     const g = await verifyGoogleToken(idToken);
     let user = db.findUserByEmail(g.email);
     if (!user) user = db.createUser({ email: g.email, name: g.name, googleId: g.googleId });
-    setSessionCookie(res, db.createSession(user.id));
+    setSessionCookie(res, db.createSession(user.id), isHttps(req));
     res.json({ user: db.publicUser(user) });
   } catch (err) {
     res.status(401).json({ error: err.message || "Google girişi başarısız." });
