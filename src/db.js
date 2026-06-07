@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, "..", "data");
+// Kalıcı disk için EVIKO_DATA_DIR ile değiştirilebilir (ör. Render'da /data).
+const DATA_DIR = process.env.EVIKO_DATA_DIR || path.join(__dirname, "..", "data");
 const DB_FILE = path.join(DATA_DIR, "eviko.json");
 
 function emptyDb() {

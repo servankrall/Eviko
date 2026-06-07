@@ -73,6 +73,18 @@ npm run android:build   # APK derler → android/app/build/outputs/apk/debug/
 
 ---
 
+## 🌐 Canlı yayın (Render)
+
+Hesap, yorum ve "en çok kullanılan" gibi özellikler bir sunucu gerektirir.
+Eviko'yu ücretsiz canlıya almak için:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/servankrall/Eviko)
+
+Adım adım anlatım: **[DEPLOY.md](DEPLOY.md)**. Özetle: PR'ı `main`'e birleştir →
+Render'da **Blueprint** ile bu depoyu seç → `GEMINI_API_KEY` (ve istersen
+`GOOGLE_CLIENT_ID`) gir → deploy. Birkaç dakikada `https://<adın>.onrender.com`
+hazır olur.
+
 ## 🛠️ Teknik
 
 | Katman     | Teknoloji                                                        |
