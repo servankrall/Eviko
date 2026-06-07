@@ -39,6 +39,8 @@ let favorites = store.get("eviko_favorites", []);
 let shopping = store.get("eviko_shopping", []);
 let prefs = store.get("eviko_prefs", []);
 let history = store.get("eviko_history", []);
+let lastRecipes = [];
+let lastPlan = [];
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -298,7 +300,9 @@ async function runPlan() {
 
 function renderPlan(data) {
   const days = (data && data.days) || [];
+  lastPlan = days;
   const list = el("plan-list");
+  el("btn-share-plan").classList.toggle("hidden", days.length === 0);
   if (days.length === 0) {
     list.innerHTML = '<div class="list-empty">Plan oluşturulamadı, tekrar dene.</div>';
     return;
@@ -318,6 +322,30 @@ function renderPlan(data) {
   list.querySelectorAll(".plan-card").forEach((c) =>
     c.addEventListener("click", () => openRecipeByTitle(days[Number(c.dataset.index)].title))
   );
+}
+
+// ---- Sürpriz tarif + planı paylaş ----
+el("btn-surprise").addEventListener("click", () => {
+  if (!lastRecipes.length) return;
+  const r = lastRecipes[Math.floor(Math.random() * lastRecipes.length)];
+  openRecipeByTitle(r.title);
+});
+
+el("btn-share-plan").addEventListener("click", sharePlan);
+async function sharePlan() {
+  if (!lastPlan.length) return;
+  const lines = ["📅 Haftalık Yemek Planı (Eviko)", ""];
+  lastPlan.forEach((d) =>
+    lines.push(`${d.day}: ${d.title}${d.description ? " — " + d.description : ""}`)
+  );
+  const text = lines.join("\n");
+  try {
+    if (navigator.share) await navigator.share({ title: "Haftalık Plan", text });
+    else {
+      await navigator.clipboard.writeText(text);
+      toast("Plan kopyalandı 📋");
+    }
+  } catch {}
 }
 
 async function runCalories() {
@@ -393,6 +421,7 @@ function renderResults(data) {
   }
 
   const recipes = data.recipes || [];
+  lastRecipes = recipes;
 
   // Eksik malzemeler (alışveriş listesi için)
   const missing = [...new Set(recipes.flatMap((r) => r.missingCommonIngredients || []))];
@@ -590,6 +619,9 @@ function renderRecipeDetail() {
   };
   el("btn-speak").onclick = () => toggleSpeak(r);
   el("btn-share").onclick = () => shareRecipe(r);
+  modal.querySelectorAll(".step-list li").forEach((li) =>
+    li.addEventListener("click", () => li.classList.toggle("done"))
+  );
   modal.querySelector(".modal-card").scrollTop = 0;
 }
 

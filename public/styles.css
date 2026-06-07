@@ -1041,6 +1041,27 @@ h2 {
   font-size: 1.05rem;
 }
 
+/* ---------- Sürpriz başlık + pişirme modu ---------- */
+.recipes-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.recipes-head .recipes-title {
+  margin-top: 0;
+}
+.step-list li {
+  cursor: pointer;
+}
+.step-list li.done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.step-list li.done::before {
+  background: var(--muted);
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
