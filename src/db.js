@@ -15,8 +15,11 @@ function emptyDb() {
 }
 
 let db = emptyDb();
+let pgPool = null;
+let usePg = false;
+let saveTimer = null;
 
-function load() {
+function loadFile() {
   try {
     if (existsSync(DB_FILE)) db = { ...emptyDb(), ...JSON.parse(readFileSync(DB_FILE, "utf8")) };
   } catch (e) {
@@ -25,7 +28,7 @@ function load() {
   }
 }
 
-function save() {
+function saveFile() {
   try {
     if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
     const tmp = DB_FILE + ".tmp";
@@ -36,7 +39,45 @@ function save() {
   }
 }
 
-load();
+async function persistPg() {
+  saveTimer = null;
+  try {
+    await pgPool.query(
+      "INSERT INTO eviko_state (id, data) VALUES ('main', $1::jsonb) " +
+        "ON CONFLICT (id) DO UPDATE SET data = $1::jsonb",
+      [JSON.stringify(db)]
+    );
+  } catch (e) {
+    console.error("DB kaydı başarısız:", e.message);
+  }
+}
+
+function save() {
+  if (usePg) {
+    if (!saveTimer) saveTimer = setTimeout(persistPg, 400);
+  } else {
+    saveFile();
+  }
+}
+
+// Başlangıçta çağrılır: DATABASE_URL varsa kalıcı Postgres, yoksa yerel dosya.
+export async function init() {
+  if (process.env.DATABASE_URL) {
+    const pg = (await import("pg")).default;
+    pgPool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    });
+    await pgPool.query("CREATE TABLE IF NOT EXISTS eviko_state (id text PRIMARY KEY, data jsonb NOT NULL)");
+    const r = await pgPool.query("SELECT data FROM eviko_state WHERE id = 'main'");
+    if (r.rows[0] && r.rows[0].data) db = { ...emptyDb(), ...r.rows[0].data };
+    usePg = true;
+    console.log("✅  Kalıcı veritabanı (Postgres) bağlı — veriler silinmez.");
+  } else {
+    loadFile();
+    console.log("ℹ️   Yerel JSON dosyası kullanılıyor. Kalıcı bulut DB için DATABASE_URL ekleyin.");
+  }
+}
 
 export function slugify(s) {
   return (

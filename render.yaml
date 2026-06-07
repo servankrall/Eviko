@@ -21,6 +21,7 @@ services:
       # Google ile giriş için (opsiyonel):
       - key: GOOGLE_CLIENT_ID
         sync: false
-      # Kalıcı veri için ücretli "Disk" eklersen, mount yolunu buraya yaz:
-      # - key: EVIKO_DATA_DIR
-      #   value: /data
+      # KALICI VERİ (silinmesin) için: ücretsiz Neon/Supabase Postgres bağlantısı
+      # Render → Environment → DATABASE_URL = postgres://...
+      - key: DATABASE_URL
+        sync: false

@@ -279,12 +279,16 @@ app.post("/api/recipes/comment", requireAuth, (req, res) => {
   res.json({ ok: true, comments: db.listComments(slug), rating: db.recipeRating(db.getRecipe(slug)) });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🥗  Eviko çalışıyor:  http://localhost:${PORT}`);
-  if (DEMO) {
-    console.log("⚠️   DEMO MODU: API anahtarı yok, örnek veriler gösterilecek.");
-    console.log("    Ücretsiz için GEMINI_API_KEY, ya da ANTHROPIC_API_KEY ekleyin (.env).\n");
-  } else {
-    console.log(`✅  ${provider.name} bağlantısı hazır (gerçek analiz aktif).\n`);
-  }
-});
+db.init()
+  .catch((e) => console.error("DB init hatası:", e.message))
+  .finally(() => {
+    app.listen(PORT, () => {
+      console.log(`\n🥗  Eviko çalışıyor:  http://localhost:${PORT}`);
+      if (DEMO) {
+        console.log("⚠️   DEMO MODU: API anahtarı yok, örnek veriler gösterilecek.");
+        console.log("    Ücretsiz için GEMINI_API_KEY, ya da ANTHROPIC_API_KEY ekleyin (.env).\n");
+      } else {
+        console.log(`✅  ${provider.name} bağlantısı hazır (gerçek analiz aktif).\n`);
+      }
+    });
+  });
