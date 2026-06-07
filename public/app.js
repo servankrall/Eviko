@@ -44,6 +44,8 @@ let lastPlan = [];
 let currentSocial = null;
 let currentUser = null;
 let googleClientId = null;
+let pantry = store.get("eviko_pantry", []);
+let installPrompt = null;
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -72,6 +74,7 @@ function init() {
   initPrefs();
   setMode(mode);
   updateBadges();
+  renderPantry();
   checkHealth();
   refreshAuth();
   loadHome();
@@ -148,6 +151,7 @@ function setMode(m) {
   el("prefs-row").classList.toggle("hidden", !ing);
   el("manual-entry").classList.toggle("hidden", !ing);
   el("btn-plan").classList.toggle("hidden", !ing);
+  el("pantry-box").classList.toggle("hidden", !ing);
   if (m === "ingredients") {
     el("hero-emoji").textContent = "📸🥕🍅";
     el("hero-title").textContent = "Sebzelerinin fotoğrafını çek";
@@ -608,6 +612,7 @@ function renderRecipeDetail() {
         <button class="btn btn-ghost" id="btn-to-shop">🛒 Malzemeleri ekle</button>
         <button class="btn btn-ghost" id="btn-speak">🔊 Sesli oku</button>
         <button class="btn btn-ghost" id="btn-share">📤 Paylaş</button>
+        <button class="btn btn-ghost" id="btn-video">▶️ Video</button>
       </div>
 
       <div class="detail-section">
@@ -641,6 +646,11 @@ function renderRecipeDetail() {
   };
   el("btn-speak").onclick = () => toggleSpeak(r);
   el("btn-share").onclick = () => shareRecipe(r);
+  el("btn-video").onclick = () =>
+    window.open(
+      "https://www.youtube.com/results?search_query=" + encodeURIComponent(r.title + " tarifi"),
+      "_blank"
+    );
   modal.querySelectorAll(".step-list li").forEach((li) =>
     li.addEventListener("click", () => li.classList.toggle("done"))
   );
@@ -1242,6 +1252,68 @@ function renderHomeRow(key, items) {
   );
   return true;
 }
+
+// ---- Tarif arama (yemek adıyla) ----
+el("search-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const q = el("search-input").value.trim();
+  if (q) {
+    detectedNames = [];
+    openRecipeByTitle(q);
+  }
+});
+
+// ---- Buzdolabım (kayıtlı malzemeler) ----
+function renderPantry() {
+  const box = el("pantry-chips");
+  box.innerHTML = pantry
+    .map(
+      (p, i) =>
+        `<span class="chip"><span>${escapeHtml(p)}</span><button class="chip-x" data-i="${i}" aria-label="Sil">×</button></span>`
+    )
+    .join("");
+  box.querySelectorAll(".chip-x").forEach((b) =>
+    b.addEventListener("click", () => {
+      pantry.splice(Number(b.dataset.i), 1);
+      store.set("eviko_pantry", pantry);
+      renderPantry();
+    })
+  );
+  el("btn-pantry-suggest").classList.toggle("hidden", pantry.length === 0);
+}
+el("pantry-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = el("pantry-input").value.trim();
+  if (v && !pantry.some((x) => x.toLocaleLowerCase("tr") === v.toLocaleLowerCase("tr"))) {
+    pantry.push(v);
+    store.set("eviko_pantry", pantry);
+  }
+  el("pantry-input").value = "";
+  renderPantry();
+});
+el("btn-pantry-suggest").addEventListener("click", () => {
+  if (pantry.length) runManual(pantry.join(", "));
+});
+
+// ---- Uygulamayı yükle (PWA) ----
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  el("btn-install").classList.remove("hidden");
+});
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  el("btn-install").classList.add("hidden");
+});
+el("btn-install").addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  try {
+    await installPrompt.userChoice;
+  } catch {}
+  installPrompt = null;
+  el("btn-install").classList.add("hidden");
+});
 
 // ---- Yardımcılar ----
 function formatQty(n) {
