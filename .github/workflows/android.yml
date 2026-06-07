@@ -1,0 +1,88 @@
+name: Android APK
+
+# Eviko'yu Capacitor ile Android APK'sına derler ve indirilebilir
+# bir artefakt olarak yükler. Android SDK kurmaya gerek yok; her şey CI'da yapılır.
+
+on:
+  push:
+    branches: [main, master, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+# APK'yı Release olarak yayınlayabilmek için yazma izni
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları yükle
+        run: npm ci
+
+      - name: İkon ve kapakları üret
+        run: npm run icons
+
+      - name: Java kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android SDK kur
+        uses: android-actions/setup-android@v3
+
+      - name: Android projesini oluştur
+        run: npx cap add android
+
+      - name: İkon ve splash'i Android'e işle
+        run: npx capacitor-assets generate --android
+
+      - name: Web varlıklarını senkronize et
+        run: npx cap sync android
+
+      # Sabit debug imza anahtarı: her derlemenin aynı imzayı kullanması sağlanır,
+      # böylece yeni APK eskisinin üstüne sorunsuz kurulur (güncelleme çalışır).
+      - name: Sabit debug imzasını kur
+        run: |
+          mkdir -p ~/.android
+          cp ci/debug.keystore ~/.android/debug.keystore
+
+      - name: APK derle (debug)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK'yı yeniden adlandır
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk eviko.apk
+
+      - name: APK'yı yükle (artefakt)
+        uses: actions/upload-artifact@v4
+        with:
+          name: eviko-debug-apk
+          path: eviko.apk
+          if-no-files-found: error
+
+      # Doğrudan, kalıcı indirme linki için APK'yı "apk-latest" Release'ine yükler.
+      # Link: https://github.com/<kullanıcı>/<depo>/releases/latest/download/eviko.apk
+      - name: APK'yı Release olarak yayınla
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: Eviko APK (son sürüm)
+          body: |
+            En güncel Eviko Android APK'sı (otomatik derlenir).
+            Doğrudan indir: **eviko.apk** (aşağıdaki Assets bölümü).
+          files: eviko.apk
+          make_latest: true

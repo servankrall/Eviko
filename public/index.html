@@ -2,36 +2,64 @@
 <html lang="tr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Eviko · Evdeki sebzelerle ne pişirsem?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+    <title>Eviko · Evdeki sebzelerle ne pişsem?</title>
     <meta
       name="description"
-      content="Evdeki sebze ve meyvelerin fotoğrafını çek; Eviko sana yapabileceğin pratik yemekleri önersin."
+      content="Evdeki sebze ve meyvelerin fotoğrafını çek; Eviko sana pratik yemekler önersin, kalorisini söylesin."
     />
+    <meta name="theme-color" content="#2f9e44" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Eviko" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icons/favicon-64.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="/styles.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>"
-    />
   </head>
   <body>
     <div id="banner" class="banner hidden"></div>
 
     <header class="topbar">
-      <div class="brand">
+      <button class="brand" id="brand-home" aria-label="Ana sayfa">
         <span class="logo">🥗</span>
         <span class="brand-name">Eviko</span>
+      </button>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="nav-favorites" aria-label="Favoriler" title="Favoriler">
+          ⭐<span class="badge hidden" id="badge-fav">0</span>
+        </button>
+        <button class="icon-btn" id="nav-shopping" aria-label="Alışveriş listesi" title="Alışveriş listesi">
+          🛒<span class="badge hidden" id="badge-shop">0</span>
+        </button>
+        <button class="icon-btn" id="nav-history" aria-label="Geçmiş" title="Geçmiş">🕘</button>
+        <button class="icon-btn" id="nav-account" aria-label="Hesap" title="Hesap">👤</button>
+        <button class="icon-btn" id="nav-settings" aria-label="Ayarlar" title="Ayarlar">⚙️</button>
       </div>
-      <p class="tagline">Evdeki sebzelerle ne pişirsem?</p>
     </header>
 
     <main id="app">
       <!-- 1) Fotoğraf seçme / çekme -->
       <section id="screen-capture" class="screen">
+        <div class="mode-switch" role="tablist">
+          <button class="mode-btn active" id="mode-ingredients" role="tab">🥕 Malzemelerim</button>
+          <button class="mode-btn" id="mode-dish" role="tab">🍽️ Tabaktaki yemek</button>
+        </div>
+
+        <div id="prefs-row" class="prefs-row">
+          <span class="prefs-label">Tercih:</span>
+          <button class="pref-chip" data-pref="Vejetaryen">Vejetaryen</button>
+          <button class="pref-chip" data-pref="Vegan">Vegan</button>
+          <button class="pref-chip" data-pref="Glutensiz">Glutensiz</button>
+          <button class="pref-chip" data-pref="Az kalori">Az kalori</button>
+          <button class="pref-chip" data-pref="Az malzeme">Az malzeme</button>
+        </div>
+
         <div class="hero">
-          <div class="hero-emoji">📸🥕🍅</div>
-          <h1>Sebzelerinin fotoğrafını çek</h1>
-          <p class="muted">
+          <div class="hero-emoji" id="hero-emoji">📸🥕🍅</div>
+          <h1 id="hero-title">Sebzelerinin fotoğrafını çek</h1>
+          <p class="muted" id="hero-text">
             Evdeki sebze ve meyveleri bir araya getir, fotoğrafını çek. Eviko
             onları tanıyıp sana <strong>birçok pratik yemek</strong> önersin.
           </p>
@@ -53,6 +81,36 @@
             <button id="btn-analyze" class="btn btn-primary">Yemekleri bul</button>
           </div>
         </div>
+
+        <div id="manual-entry" class="manual-entry">
+          <div class="manual-sep"><span>veya</span></div>
+          <form id="manual-form" class="manual-form">
+            <input
+              id="manual-input"
+              type="text"
+              placeholder="Malzemeleri yaz: domates, biber, yumurta…"
+              autocomplete="off"
+            />
+            <button class="btn btn-ghost" type="submit">Ara</button>
+          </form>
+        </div>
+
+        <button id="btn-plan" class="btn btn-ghost plan-btn">📅 Haftalık yemek planı</button>
+
+        <div id="home-sections" class="home-sections hidden">
+          <div class="home-sec hidden" id="home-daily">
+            <h2>🔥 Günün favorileri</h2>
+            <div class="home-row" id="row-daily"></div>
+          </div>
+          <div class="home-sec hidden" id="home-popular">
+            <h2>⭐ En çok kullanılan</h2>
+            <div class="home-row" id="row-popular"></div>
+          </div>
+          <div class="home-sec hidden" id="home-recommended">
+            <h2>👍 Tavsiye edilen</h2>
+            <div class="home-row" id="row-recommended"></div>
+          </div>
+        </div>
       </section>
 
       <!-- 2) Yükleniyor -->
@@ -60,11 +118,11 @@
         <div class="loader">
           <div class="pan">🍳</div>
           <p id="loading-text">Fotoğraf inceleniyor…</p>
-          <p class="muted small">Malzemeler tanınıyor ve tarifler hazırlanıyor.</p>
+          <p class="muted small" id="loading-sub">Malzemeler tanınıyor ve tarifler hazırlanıyor.</p>
         </div>
       </section>
 
-      <!-- 3) Sonuçlar -->
+      <!-- 3) Sonuçlar (malzeme modu) -->
       <section id="screen-results" class="screen hidden">
         <div class="results-head">
           <h2>Tanınan malzemeler</h2>
@@ -72,9 +130,76 @@
         </div>
         <div id="detected" class="chips"></div>
 
-        <h2 class="recipes-title">Yapabileceğin yemekler</h2>
-        <p class="muted small">Bir yemeğe dokun, adım adım tarifini görelim.</p>
+        <div id="missing-bar" class="missing-bar hidden">
+          <span id="missing-text"></span>
+          <button id="btn-add-missing" class="btn btn-ghost small">🛒 Listeye ekle</button>
+        </div>
+
+        <div class="recipes-head">
+          <div>
+            <h2 class="recipes-title">Yapabileceğin yemekler</h2>
+            <p class="muted small">Bir yemeğe dokun, adım adım tarifini görelim.</p>
+          </div>
+          <button id="btn-surprise" class="btn btn-ghost small">🎲 Sürpriz</button>
+        </div>
         <div id="recipes" class="recipe-grid"></div>
+      </section>
+
+      <!-- 4) Kalori (tabak modu) -->
+      <section id="screen-calories" class="screen hidden">
+        <div class="results-head">
+          <h2>Kalori tahmini</h2>
+          <button id="btn-new-2" class="btn btn-ghost small">Yeni fotoğraf</button>
+        </div>
+        <div id="calorie-card"></div>
+        <p class="muted small disclaimer">
+          ⚠️ Bu değerler fotoğrafa dayalı bir tahmindir; gerçek değerler porsiyon
+          ve pişirme yöntemine göre değişebilir.
+        </p>
+      </section>
+
+      <!-- 5) Favoriler -->
+      <section id="screen-favorites" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>⭐ Favori tariflerim</h2>
+        </div>
+        <div id="favorites-list"></div>
+      </section>
+
+      <!-- 6) Alışveriş listesi -->
+      <section id="screen-shopping" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>🛒 Alışveriş listesi</h2>
+        </div>
+        <form id="shop-add-form" class="shop-add">
+          <input id="shop-add-input" type="text" placeholder="Malzeme ekle…" autocomplete="off" />
+          <button class="btn btn-primary small" type="submit">Ekle</button>
+        </form>
+        <ul id="shopping-list" class="shopping-list"></ul>
+        <button id="btn-clear-shop" class="btn btn-ghost small hidden">Tümünü temizle</button>
+      </section>
+
+      <!-- 7) Geçmiş -->
+      <section id="screen-history" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>🕘 Geçmiş</h2>
+        </div>
+        <div id="history-list"></div>
+        <button id="btn-clear-history" class="btn btn-ghost small hidden">Geçmişi temizle</button>
+      </section>
+
+      <!-- 8) Haftalık plan -->
+      <section id="screen-plan" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>📅 Haftalık plan</h2>
+        </div>
+        <p class="muted small">Bir güne dokun, tarifini aç.</p>
+        <div id="plan-list" class="plan-list"></div>
+        <button id="btn-share-plan" class="btn btn-ghost small hidden">📤 Planı paylaş</button>
       </section>
     </main>
 
@@ -86,10 +211,96 @@
       </div>
     </div>
 
-    <footer class="footer muted small">
-      Eviko · Claude ile geliştirildi
-    </footer>
+    <!-- Ayarlar -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="settings-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>⚙️ Ayarlar</h2>
 
+        <label class="field-label" for="gemini-key-input">🔑 Gemini API anahtarı (ücretsiz)</label>
+        <p class="muted small">
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"
+            >aistudio.google.com/apikey</a
+          >
+          adresinden ücretsiz al ve buraya yapıştır. Anahtar yalnızca bu cihazda
+          saklanır; fotoğraflar analiz için doğrudan Google'a gönderilir.
+        </p>
+        <input id="gemini-key-input" type="password" placeholder="AIza…" autocomplete="off" />
+
+        <label class="field-label" for="gemini-model-select">Model</label>
+        <select id="gemini-model-select">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (önerilen)</option>
+          <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite (yüksek ücretsiz limit)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+        </select>
+        <p class="muted small">
+          Bir model "yoğun" derse uygulama otomatik tekrar dener ve gerekirse
+          diğer modellere geçer.
+        </p>
+
+        <details class="adv">
+          <summary class="muted small">Gelişmiş: kendi sunucunu kullan</summary>
+          <label class="field-label" for="api-base-input">Sunucu adresi (API)</label>
+          <input
+            id="api-base-input"
+            type="url"
+            placeholder="https://eviko-sunucum.example.com"
+            autocomplete="off"
+          />
+        </details>
+
+        <label class="field-label" for="theme-select">Tema</label>
+        <select id="theme-select">
+          <option value="auto">Otomatik (cihaza göre)</option>
+          <option value="light">Açık</option>
+          <option value="dark">Koyu</option>
+        </select>
+
+        <label class="field-label" for="lang-select">Dil / Language</label>
+        <select id="lang-select">
+          <option value="tr">Türkçe</option>
+          <option value="en">English</option>
+        </select>
+
+        <div class="settings-actions">
+          <button id="settings-save" class="btn btn-primary">Kaydet</button>
+          <button id="settings-clear" class="btn btn-ghost">Temizle</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hesap -->
+    <div id="auth-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="auth-close" class="modal-close" aria-label="Kapat">×</button>
+
+        <div id="auth-logged-out">
+          <h2 id="auth-title">Giriş yap</h2>
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" type="button">Giriş</button>
+            <button class="auth-tab" id="tab-register" type="button">Kayıt ol</button>
+          </div>
+          <input id="auth-name" class="auth-input hidden" type="text" placeholder="Adın" autocomplete="name" />
+          <input id="auth-email" class="auth-input" type="email" placeholder="E-posta" autocomplete="email" />
+          <input id="auth-password" class="auth-input" type="password" placeholder="Şifre (en az 6 karakter)" autocomplete="current-password" />
+          <div id="auth-error" class="auth-error hidden"></div>
+          <button id="auth-submit" class="btn btn-primary auth-submit" type="button">Giriş yap</button>
+          <div id="google-btn" class="google-btn hidden"></div>
+        </div>
+
+        <div id="auth-logged-in" class="hidden">
+          <h2>Hesabım</h2>
+          <p id="auth-hello" class="muted"></p>
+          <button id="auth-logout" class="btn btn-ghost auth-submit" type="button">Çıkış yap</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer muted small">Eviko · Claude ile geliştirildi</footer>
+
+    <script src="/config.js"></script>
+    <script src="/ai.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

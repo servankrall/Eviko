@@ -3,3 +3,14 @@ node_modules/
 *.log
 .DS_Store
 dist/
+
+# Capacitor tarafından üretilen yerel projeler (CI'da yeniden oluşturulur)
+android/
+ios/
+.gradle/
+*.keystore
+# Sabit debug imza anahtarı (güncellemelerin düzgün kurulması için commit'lenir)
+!ci/debug.keystore
+
+# Yerel veritabanı (JSON)
+data/

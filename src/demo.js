@@ -81,25 +81,58 @@ export function demoRecipe(title) {
     servings: 2,
     durationMinutes: 20,
     difficulty: "kolay",
+    caloriesPerServing: 280,
+    estimatedCostTl: 95,
     ingredients: [
-      { item: "Domates", amount: "3 adet (rendelenmiş)" },
-      { item: "Yeşil biber", amount: "2 adet" },
-      { item: "Soğan", amount: "1 adet (opsiyonel)" },
-      { item: "Yumurta", amount: "3 adet" },
-      { item: "Zeytinyağı", amount: "2 yemek kaşığı" },
-      { item: "Tuz, karabiber, pul biber", amount: "damak zevkine göre" },
+      { item: "Domates", quantity: 3, unit: "adet", toTaste: false },
+      { item: "Yeşil biber", quantity: 2, unit: "adet", toTaste: false },
+      { item: "Soğan", quantity: 1, unit: "adet", toTaste: false },
+      { item: "Yumurta", quantity: 3, unit: "adet", toTaste: false },
+      { item: "Zeytinyağı", quantity: 2, unit: "yemek kaşığı", toTaste: false },
+      { item: "Tuz ve karabiber", quantity: 0, unit: "", toTaste: true },
+      { item: "Pul biber", quantity: 0, unit: "", toTaste: true },
     ],
     steps: [
       "Soğanı ve biberleri küçük küçük doğrayın.",
       "Tavada zeytinyağını ısıtıp soğan ve biberi yumuşayana kadar kavurun.",
       "Rendelenmiş domatesi ekleyip suyunu çekene kadar pişirin.",
-      "Baharatları ekleyin, karıştırın.",
+      "Baharatları ekleyin ve karıştırın.",
       "Yumurtaları kırıp hafifçe karıştırarak istediğiniz kıvamda pişirin.",
-      "Sıcak servis yapın, yanında taze ekmekle keyfini çıkarın.",
+      "Sıcak servis yapın; yanında taze ekmekle keyfini çıkarın.",
     ],
     tips: [
       "Yumurtaları çok karıştırmazsanız menemen daha güzel görünür.",
       "Acı sevenler pişirme sonunda biraz daha pul biber ekleyebilir.",
     ],
+  };
+}
+
+export function demoPlan() {
+  const days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+  const meals = [
+    ["Menemen", "Pratik ve doyurucu"],
+    ["Sebze Türlüsü", "Mevsim sebzeleriyle"],
+    ["Mercimek Çorbası", "Yanında ekmekle"],
+    ["Fırında Patates", "Çıtır ve baharatlı"],
+    ["Çoban Salatası + Omlet", "Hafif bir akşam"],
+    ["Patlıcan Musakka", "Sofralık ana yemek"],
+    ["Domates Çorbası", "Sıcacık kapanış"],
+  ];
+  return { days: days.map((d, i) => ({ day: d, title: meals[i][0], description: meals[i][1] })) };
+}
+
+export function demoCalories() {
+  return {
+    dishName: "Mercimek Çorbası (örnek)",
+    summary: "Bir kase klasik kırmızı mercimek çorbası.",
+    totalCalories: 230,
+    confidence: "orta",
+    components: [
+      { name: "Mercimek", emoji: "🥣", calories: 150 },
+      { name: "Zeytinyağı / tereyağı", emoji: "🧈", calories: 60 },
+      { name: "Sebzeler", emoji: "🥕", calories: 20 },
+    ],
+    macros: { proteinG: 12, carbsG: 30, fatG: 7 },
+    healthNote: "Yanına limon sıkmak hem lezzeti hem de demir emilimini artırır.",
   };
 }

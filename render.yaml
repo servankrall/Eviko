@@ -1,0 +1,26 @@
+# Render Blueprint — Eviko'yu birkaç tıkla yayınlamak için.
+# render.com → New → Blueprint → bu depoyu seç → Apply.
+services:
+  - type: web
+    name: eviko
+    env: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Gerçek analiz için en az birini gir (Render → Environment):
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Google ile giriş için (opsiyonel):
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Kalıcı veri için ücretli "Disk" eklersen, mount yolunu buraya yaz:
+      # - key: EVIKO_DATA_DIR
+      #   value: /data

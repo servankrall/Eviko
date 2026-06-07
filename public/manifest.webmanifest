@@ -1,0 +1,19 @@
+{
+  "name": "Eviko — Evdeki sebzelerle ne pişsem?",
+  "short_name": "Eviko",
+  "description": "Sebze ve meyvelerin fotoğrafından pratik yemek önerileri ve kalori tahmini.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffdf7",
+  "theme_color": "#2f9e44",
+  "categories": ["food", "lifestyle", "health"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
