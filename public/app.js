@@ -596,6 +596,16 @@ function renderRecipeDetail() {
         ${r.estimatedCostTl ? `<span class="tag">🛒 ~${r.estimatedCostTl} ₺</span>` : ""}
       </div>
 
+      ${
+        r.macros
+          ? `<div class="macros recipe-macros">
+        <div class="macro"><div class="mnum">${r.macros.proteinG ?? "-"}g</div><div class="mlabel">Protein</div></div>
+        <div class="macro"><div class="mnum">${r.macros.carbsG ?? "-"}g</div><div class="mlabel">Karbonhidrat</div></div>
+        <div class="macro"><div class="mnum">${r.macros.fatG ?? "-"}g</div><div class="mlabel">Yağ</div></div>
+      </div>`
+          : ""
+      }
+
       <div class="portion">
         <span class="portion-label">🍽 Porsiyon</span>
         <div class="stepper">
@@ -613,6 +623,7 @@ function renderRecipeDetail() {
         <button class="btn btn-ghost" id="btn-speak">🔊 Sesli oku</button>
         <button class="btn btn-ghost" id="btn-share">📤 Paylaş</button>
         <button class="btn btn-ghost" id="btn-video">▶️ Video</button>
+        <button class="btn btn-primary" id="btn-cook">👨‍🍳 Pişir</button>
       </div>
 
       <div class="detail-section">
@@ -651,6 +662,7 @@ function renderRecipeDetail() {
       "https://www.youtube.com/results?search_query=" + encodeURIComponent(r.title + " tarifi"),
       "_blank"
     );
+  el("btn-cook").onclick = () => openCook(r);
   modal.querySelectorAll(".step-list li").forEach((li) =>
     li.addEventListener("click", () => li.classList.toggle("done"))
   );
@@ -1314,6 +1326,164 @@ el("btn-install").addEventListener("click", async () => {
   installPrompt = null;
   el("btn-install").classList.add("hidden");
 });
+
+// ---- Pişirme modu (adım adım + zamanlayıcı) ----
+const cookModal = el("cook-modal");
+let cookSteps = [];
+let cookIdx = 0;
+let cookInterval = null;
+let cookRemain = 0;
+
+function openCook(r) {
+  cookSteps = r.steps || [];
+  if (!cookSteps.length) {
+    toast("Bu tarifte adım yok.");
+    return;
+  }
+  cookIdx = 0;
+  cookModal.classList.remove("hidden");
+  renderCook();
+}
+function closeCook() {
+  stopCookTimer();
+  cookModal.classList.add("hidden");
+}
+function parseDuration(text) {
+  const m = /(\d+)\s*(saat|dakika|dk|saniye|sn)/i.exec(text || "");
+  if (!m) return 0;
+  const n = Number(m[1]);
+  const u = m[2].toLowerCase();
+  if (u.indexOf("saat") === 0) return n * 3600;
+  if (u.indexOf("dak") === 0 || u === "dk") return n * 60;
+  return n;
+}
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, "0")}`;
+}
+function renderCook() {
+  const total = cookSteps.length;
+  const step = cookSteps[cookIdx] || "";
+  const dur = parseDuration(step);
+  el("cook-body").innerHTML = `
+    <div class="cook-top">Adım ${cookIdx + 1} / ${total}</div>
+    <div class="cook-step">${escapeHtml(step)}</div>
+    <div id="cook-timer" class="cook-timer">${
+      dur ? `<button class="btn btn-primary" id="cook-start">⏱ ${fmtTime(dur)} başlat</button>` : ""
+    }</div>
+    <div class="cook-nav">
+      <button class="btn btn-ghost" id="cook-prev" ${cookIdx === 0 ? "disabled" : ""}>‹ Önceki</button>
+      ${
+        cookIdx < total - 1
+          ? `<button class="btn btn-primary" id="cook-next">Sonraki ›</button>`
+          : `<button class="btn btn-primary" id="cook-finish">Bitti 🎉</button>`
+      }
+    </div>`;
+  const start = el("cook-start");
+  if (start) start.onclick = () => startCookTimer(dur);
+  const prev = el("cook-prev");
+  if (prev)
+    prev.onclick = () => {
+      stopCookTimer();
+      cookIdx = Math.max(0, cookIdx - 1);
+      renderCook();
+    };
+  const next = el("cook-next");
+  if (next)
+    next.onclick = () => {
+      stopCookTimer();
+      cookIdx = Math.min(total - 1, cookIdx + 1);
+      renderCook();
+    };
+  const fin = el("cook-finish");
+  if (fin)
+    fin.onclick = () => {
+      closeCook();
+      toast("Afiyet olsun! 🎉");
+    };
+}
+function startCookTimer(sec) {
+  stopCookTimer();
+  cookRemain = sec;
+  const t = el("cook-timer");
+  const paint = () => {
+    t.innerHTML = `<div class="cook-count">${fmtTime(cookRemain)}</div><button class="btn btn-ghost" id="cook-stop">Durdur</button>`;
+    const st = el("cook-stop");
+    if (st) st.onclick = stopCookTimer;
+  };
+  paint();
+  cookInterval = setInterval(() => {
+    cookRemain--;
+    if (cookRemain <= 0) {
+      stopCookTimer();
+      beep();
+      t.innerHTML = '<div class="cook-count done">Süre doldu! ⏰</div>';
+    } else paint();
+  }, 1000);
+}
+function stopCookTimer() {
+  if (cookInterval) {
+    clearInterval(cookInterval);
+    cookInterval = null;
+  }
+}
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.type = "sine";
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+    o.start();
+    setTimeout(() => {
+      try {
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        o.stop(ctx.currentTime + 0.25);
+        ctx.close();
+      } catch {}
+    }, 700);
+  } catch {}
+  try {
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  } catch {}
+}
+el("cook-close").addEventListener("click", closeCook);
+cookModal.addEventListener("click", (e) => {
+  if (e.target === cookModal) closeCook();
+});
+
+// ---- Sesle arama ----
+(function setupVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return; // desteklenmiyorsa mikrofon gizli kalır
+  const mic = el("search-mic");
+  if (!mic) return;
+  mic.classList.remove("hidden");
+  let rec = null;
+  mic.addEventListener("click", () => {
+    try {
+      rec = new SR();
+      rec.lang = "tr-TR";
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      mic.classList.add("listening");
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        el("search-input").value = text;
+        el("search-form").dispatchEvent(new Event("submit"));
+      };
+      rec.onerror = () => mic.classList.remove("listening");
+      rec.onend = () => mic.classList.remove("listening");
+      rec.start();
+    } catch {
+      mic.classList.remove("listening");
+    }
+  });
+})();
 
 // ---- Yardımcılar ----
 function formatQty(n) {

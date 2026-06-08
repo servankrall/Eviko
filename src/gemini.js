@@ -116,11 +116,12 @@ Yanıtı SADECE şu JSON yapısında ver:
   "difficulty": "kolay|orta|zor",
   "caloriesPerServing": 420,
   "estimatedCostTl": 85,
+  "macros": {"proteinG": 20, "carbsG": 45, "fatG": 15},
   "ingredients": [{"item": "malzeme", "quantity": 2, "unit": "adet|su bardağı|yemek kaşığı|g|ml", "toTaste": false}],
   "steps": ["sıralı pişirme adımları"],
   "tips": ["1-3 ipucu"]
 }
-Not: "toTaste" true olanlarda "quantity" 0 olabilir. "estimatedCostTl" tarifin yaklaşık toplam malzeme maliyeti (TL).`;
+Not: "toTaste" true olanlarda "quantity" 0 olabilir. "estimatedCostTl" toplam malzeme maliyeti (TL), "macros" porsiyon başı protein/karbonhidrat/yağ (gram).`;
 
 export async function getRecipe({ title, detected = [], preferences = [], language = "tr" }) {
   const elde = detected.length ? `Evde şu malzemeler var: ${detected.join(", ")}. ` : "";
@@ -128,8 +129,9 @@ export async function getRecipe({ title, detected = [], preferences = [], langua
     `"${title}" adlı yemeğin detaylı, adım adım tarifini ver. ${elde}` +
     "Tarifi 2-4 kişilik temel al ve 'servings' alanına yaz. Malzeme miktarlarını " +
     "sayısal 'quantity' + 'unit' ile, damak zevkine göre olanları 'toTaste': true ile belirt. " +
-    "Porsiyon başına tahmini kaloriyi 'caloriesPerServing', tarifin yaklaşık toplam " +
-    "malzeme maliyetini 'estimatedCostTl' (TL) olarak ver." +
+    "Porsiyon başına tahmini kaloriyi 'caloriesPerServing', makroları " +
+    "(protein/karbonhidrat/yağ gram) 'macros', tarifin yaklaşık toplam malzeme " +
+    "maliyetini 'estimatedCostTl' (TL) olarak ver." +
     prefText(preferences) +
     RECIPE_SHAPE +
     langText(language);
