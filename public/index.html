@@ -227,6 +227,7 @@
         <div class="results-head">
           <button class="btn btn-ghost small" data-back>‹ Geri</button>
           <h2>⭐ Favori tariflerim</h2>
+          <button id="btn-myrecipes" class="btn btn-ghost small">✍️ Kendi tariflerim</button>
         </div>
         <input
           id="fav-search"
@@ -524,6 +525,25 @@
         <button id="coach-close" class="modal-close" aria-label="Kapat">×</button>
         <h2>🧑‍🏫 Haftalık koçluk</h2>
         <div id="coach-body" class="coach-body"></div>
+      </div>
+    </div>
+
+    <!-- Kendi tariflerim -->
+    <div id="myrecipes-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="myrec-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>✍️ Kendi tariflerim</h2>
+        <div id="myrec-list"></div>
+        <button id="myrec-new" class="btn btn-ghost">➕ Yeni tarif ekle</button>
+        <form id="myrec-form" class="myrec-form hidden">
+          <input id="myrec-title" type="text" placeholder="Tarif adı" autocomplete="off" />
+          <textarea id="myrec-ing" rows="5" placeholder="Malzemeler — her satıra bir tane&#10;ör. 2 yumurta&#10;1 su bardağı un"></textarea>
+          <textarea id="myrec-steps" rows="5" placeholder="Adımlar — her satıra bir tane"></textarea>
+          <div class="myrec-actions">
+            <button class="btn btn-primary" type="submit">Kaydet</button>
+            <button class="btn btn-ghost" type="button" id="myrec-cancel">Vazgeç</button>
+          </div>
+        </form>
       </div>
     </div>
 

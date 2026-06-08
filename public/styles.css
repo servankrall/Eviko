@@ -1992,6 +1992,40 @@ h2 {
   margin-top: 8px;
 }
 
+/* ---------- Kendi tariflerim ---------- */
+.myrec-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.myrec-form input,
+.myrec-form textarea {
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--ink);
+  resize: vertical;
+}
+[data-theme="dark"] .myrec-form input,
+[data-theme="dark"] .myrec-form textarea {
+  background: #1d2226;
+}
+.myrec-actions {
+  display: flex;
+  gap: 10px;
+}
+.myrec-actions .btn {
+  flex: 1;
+}
+#myrec-new {
+  width: 100%;
+  margin-top: 12px;
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
