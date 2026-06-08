@@ -548,3 +548,70 @@ export async function readReceipt({ imageBase64, mediaType, language = "tr" }) {
   });
   return parseJson(message);
 }
+
+// ---------------------------------------------------------------------------
+// 8) Sesli/serbest istek → yemek önerileri (asistan)
+// ---------------------------------------------------------------------------
+
+/**
+ * Kullanıcının serbest isteğine ('akşama 4 kişiye hafif bir şey') göre yemek önerir.
+ * @param {{ query: string, preferences?: string[], language?: string }} args
+ */
+export async function suggest({ query, preferences = [], language = "tr" }) {
+  const instruction =
+    `Kullanıcının isteği: "${query}". Bu isteğe uygun 6-8 farklı pratik yemek öner ` +
+    "(tuz, yağ, soğan, sarımsak, un, yumurta, baharat evde var sayılır). İstekteki kişi " +
+    "sayısı, öğün, hafiflik/doyuruculuk gibi ipuçlarını dikkate al. 'detected' alanını boş " +
+    "bırakabilirsin." +
+    prefText(preferences) +
+    langText(language);
+  const message = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    thinking: { type: "adaptive" },
+    system: PERSONA,
+    messages: [{ role: "user", content: instruction }],
+    output_config: { format: { type: "json_schema", schema: ANALYZE_SCHEMA } },
+  });
+  return parseJson(message);
+}
+
+// ---------------------------------------------------------------------------
+// 9) Haftalık beslenme koçluğu
+// ---------------------------------------------------------------------------
+
+const COACH_SCHEMA = {
+  type: "object",
+  properties: {
+    message: { type: "string", description: "Kısa, samimi, yargılamayan genel değerlendirme" },
+    tips: {
+      type: "array",
+      description: "2-4 uygulanabilir öneri",
+      items: { type: "string" },
+    },
+  },
+  required: ["message", "tips"],
+  additionalProperties: false,
+};
+
+/**
+ * Kullanıcının son günlerdeki yeme özetine göre kısa koçluk verir (tıbbi tavsiye değil).
+ * @param {{ summary: string, language?: string }} args
+ */
+export async function coach({ summary, language = "tr" }) {
+  const instruction =
+    "Bir beslenme koçu gibisin (doktor değilsin). Kullanıcının son günlerdeki yeme özeti " +
+    "aşağıda. Kısa, samimi ve yargılamayan bir değerlendirme ('message') ve 2-4 uygulanabilir " +
+    "öneri ('tips') ver. Tıbbi iddia veya teşhis yapma.\n\nÖzet:\n" +
+    summary +
+    langText(language);
+  const message = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    thinking: { type: "adaptive" },
+    system: PERSONA,
+    messages: [{ role: "user", content: instruction }],
+    output_config: { format: { type: "json_schema", schema: COACH_SCHEMA } },
+  });
+  return parseJson(message);
+}

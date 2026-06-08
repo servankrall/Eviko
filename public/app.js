@@ -2031,6 +2031,123 @@ function renderEvent(data) {
   };
 }
 
+// ---- Sesli asistan (serbest istek → öneriler) ----
+const assistantModal = el("assistant-modal");
+el("btn-assistant").addEventListener("click", () => {
+  el("assistant-input").value = "";
+  assistantModal.classList.remove("hidden");
+  setTimeout(() => el("assistant-input").focus(), 60);
+});
+el("assistant-close").addEventListener("click", () => assistantModal.classList.add("hidden"));
+assistantModal.addEventListener("click", (e) => {
+  if (e.target === assistantModal) assistantModal.classList.add("hidden");
+});
+el("assistant-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const q = el("assistant-input").value.trim();
+  if (q) runAssistant(q);
+});
+async function runAssistant(query) {
+  assistantModal.classList.add("hidden");
+  lastAction = () => runAssistant(query);
+  showScreen("loading");
+  el("loading-text").textContent = "İsteğin değerlendiriliyor…";
+  el("loading-sub").textContent = "Sana uygun yemekler hazırlanıyor.";
+  try {
+    const data = useGemini()
+      ? await window.GeminiClient.suggest(query, effectivePrefs())
+      : await serverPost("/api/suggest", {
+          query,
+          preferences: effectivePrefs(),
+          language: langPref(),
+        });
+    renderResults(data);
+    cacheResults(data);
+    saveHistory("ingredients", data);
+    showScreen("results");
+  } catch (err) {
+    fail(err, "results");
+  }
+}
+(function setupAssistantVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const mic = el("assistant-mic");
+  if (!SR || !mic) return;
+  mic.classList.remove("hidden");
+  mic.addEventListener("click", () => {
+    try {
+      const rec = new SR();
+      rec.lang = langPref() === "en" ? "en-US" : "tr-TR";
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      mic.classList.add("listening");
+      rec.onresult = (ev) => {
+        el("assistant-input").value = ev.results[0][0].transcript;
+        el("assistant-form").dispatchEvent(new Event("submit"));
+      };
+      rec.onerror = () => mic.classList.remove("listening");
+      rec.onend = () => mic.classList.remove("listening");
+      rec.start();
+    } catch {
+      mic.classList.remove("listening");
+    }
+  });
+})();
+
+// ---- Haftalık beslenme koçluğu ----
+function diarySummary() {
+  const cutoff = Date.now() - 7 * 86400000;
+  const recent = diary.filter((e) => (e.ts || 0) >= cutoff);
+  const dayset = new Set(recent.map((e) => e.day));
+  let totalKcal = 0,
+    mp = 0,
+    mc = 0,
+    mf = 0;
+  const names = [];
+  recent.forEach((e) => {
+    totalKcal += e.kcal || 0;
+    if (e.m) {
+      mp += e.m.p || 0;
+      mc += e.m.c || 0;
+      mf += e.m.f || 0;
+    }
+    if (e.name) names.push(e.name);
+  });
+  const days = dayset.size || 1;
+  const waterDays = Object.keys(water).filter((k) => (water[k] || 0) > 0).length;
+  return [
+    `Kayıtlı gün sayısı (son 7 gün): ${dayset.size}`,
+    `Günlük ortalama kalori: ${Math.round(totalKcal / days)} kcal`,
+    `Toplam makro (g): protein ${mp}, karbonhidrat ${mc}, yağ ${mf}`,
+    `Su içilen gün sayısı: ${waterDays}`,
+    `Kalori hedefi: ${calGoal} kcal`,
+    names.length ? `Son yenenler: ${names.slice(-15).join(", ")}` : "Henüz yemek kaydı yok.",
+  ].join("\n");
+}
+const coachModal = el("coach-modal");
+el("btn-coach").addEventListener("click", async () => {
+  coachModal.classList.remove("hidden");
+  const box = el("coach-body");
+  box.innerHTML = '<p class="muted small">Hazırlanıyor… 🧑‍🏫</p>';
+  try {
+    const summary = diarySummary();
+    const data = useGemini()
+      ? await window.GeminiClient.coach(summary)
+      : await serverPost("/api/coach", { summary, language: langPref() });
+    const tips = (data.tips || []).map((t) => `<li>${escapeHtml(t)}</li>`).join("");
+    box.innerHTML =
+      `<p>${escapeHtml(data.message || "")}</p>` +
+      (tips ? `<ul class="coach-tips">${tips}</ul>` : "") +
+      '<p class="muted small">Bu genel bir öneridir, tıbbi tavsiye değildir.</p>';
+  } catch (err) {
+    box.innerHTML = `<p class="muted small">${escapeHtml(err.message || "Koçluk alınamadı.")}</p>`;
+  }
+});
+el("coach-close").addEventListener("click", () => coachModal.classList.add("hidden"));
+coachModal.addEventListener("click", (e) => {
+  if (e.target === coachModal) coachModal.classList.add("hidden");
+});
+
 // ---- Beslenme günlüğü (Bugün) ----
 function todayKey() {
   const d = new Date();

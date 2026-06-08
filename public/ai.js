@@ -279,7 +279,31 @@ Tam 7 gün ver (Pazartesi'den Pazar'a). Her gün için 4-6 ana malzemeyi "ingred
     return call([{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }]);
   }
 
+  async function suggest(query, prefs = []) {
+    const prompt =
+      `Kullanıcının isteği: "${query}". Bu isteğe uygun 6-8 farklı pratik yemek öner (tuz, yağ, ` +
+      "soğan, sarımsak, un, yumurta, baharat evde var sayılır). İstekteki kişi sayısı, öğün, " +
+      "hafiflik/doyuruculuk gibi ipuçlarını dikkate al. 'detected' boş olabilir." +
+      prefsLine(prefs) +
+      favLine() +
+      ANALYZE_SHAPE +
+      langLine();
+    return call([{ text: prompt }]);
+  }
+
+  async function coach(summary) {
+    const prompt =
+      "Bir beslenme koçu gibisin (doktor değilsin). Aşağıdaki yeme özetine göre kısa, samimi, " +
+      "yargılamayan bir değerlendirme ('message') ve 2-4 uygulanabilir öneri ('tips') ver. Tıbbi " +
+      "iddia veya teşhis yapma.\n\nÖzet:\n" +
+      summary +
+      '\nYanıtı SADECE şu JSON ile ver: {"message":"...","tips":["...","..."]}' +
+      langLine();
+    return call([{ text: prompt }]);
+  }
+
   window.GeminiClient = {
-    hasKey, analyze, analyzeText, recipe, calories, planWeek, substitute, eventPlan, readReceipt,
+    hasKey, analyze, analyzeText, recipe, calories, planWeek, substitute, eventPlan,
+    readReceipt, suggest, coach,
   };
 })();
