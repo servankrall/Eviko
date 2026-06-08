@@ -1648,6 +1648,41 @@ h2 {
 .intro-start {
   width: 100%;
 }
+.intro-actions {
+  display: flex;
+  gap: 10px;
+}
+.intro-actions .btn {
+  flex: 1;
+}
+.help-body {
+  margin: 8px 0 16px;
+}
+.help-step {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.help-step:last-child {
+  border-bottom: none;
+}
+.help-step h3 {
+  margin: 0 0 6px;
+  font-size: 1.02rem;
+}
+.help-step p {
+  margin: 0 0 6px;
+  line-height: 1.6;
+}
+.help-ol,
+.help-ul {
+  margin: 6px 0;
+  padding-left: 22px;
+  line-height: 1.6;
+}
+.help-ol li,
+.help-ul li {
+  margin-bottom: 6px;
+}
 .plan-actions {
   display: flex;
   flex-direction: column;

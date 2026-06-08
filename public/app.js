@@ -1893,6 +1893,26 @@ if (!localStorage.getItem("eviko_seen_intro")) {
   setTimeout(() => introModal.classList.remove("hidden"), 400);
 }
 
+// ---- Yardım / nasıl kullanılır ----
+const helpModal = el("help-modal");
+function openHelp() {
+  helpModal.classList.remove("hidden");
+}
+function closeHelp() {
+  helpModal.classList.add("hidden");
+}
+el("nav-help").addEventListener("click", openHelp);
+el("help-close").addEventListener("click", closeHelp);
+el("help-ok").addEventListener("click", closeHelp);
+helpModal.addEventListener("click", (e) => {
+  if (e.target === helpModal) closeHelp();
+});
+el("intro-help").addEventListener("click", () => {
+  localStorage.setItem("eviko_seen_intro", "1");
+  introModal.classList.add("hidden");
+  openHelp();
+});
+
 // ---- Yardımcılar ----
 function formatQty(n) {
   const rounded = Math.round(n * 100) / 100;
