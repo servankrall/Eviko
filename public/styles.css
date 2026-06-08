@@ -1585,6 +1585,97 @@ h2 {
   color: var(--ink);
 }
 
+/* ---------- Tema rengi (accent) ---------- */
+[data-accent="tomato"] {
+  --green: #e8590c;
+  --green-dark: #d9480f;
+}
+[data-accent="blue"] {
+  --green: #1c7ed6;
+  --green-dark: #1864ab;
+}
+[data-accent="purple"] {
+  --green: #7048e8;
+  --green-dark: #5f3dc4;
+}
+.accent-picker {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 2px;
+}
+.accent-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.accent-dot.active {
+  border-color: var(--ink);
+}
+
+/* ---------- Su takibi ---------- */
+.water-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  font-weight: 700;
+}
+.water-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.water-ctrl button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pairing-note {
+  margin-top: 0;
+}
+
+/* ---------- Yazdırma ---------- */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #modal,
+  #modal * {
+    visibility: visible !important;
+  }
+  #modal {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+  }
+  .modal-card {
+    box-shadow: none;
+    max-height: none;
+    overflow: visible;
+  }
+  .modal-close,
+  .detail-toolbar,
+  .portion,
+  #recipe-social,
+  #recipe-note {
+    display: none !important;
+  }
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;

@@ -117,11 +117,12 @@ Yanıtı SADECE şu JSON yapısında ver:
   "caloriesPerServing": 420,
   "estimatedCostTl": 85,
   "macros": {"proteinG": 20, "carbsG": 45, "fatG": 15},
+  "pairing": "yanında iyi giden içecek/yan lezzet",
   "ingredients": [{"item": "malzeme", "quantity": 2, "unit": "adet|su bardağı|yemek kaşığı|g|ml", "toTaste": false}],
   "steps": ["sıralı pişirme adımları"],
   "tips": ["1-3 ipucu"]
 }
-Not: "toTaste" true olanlarda "quantity" 0 olabilir. "estimatedCostTl" toplam malzeme maliyeti (TL), "macros" porsiyon başı protein/karbonhidrat/yağ (gram).`;
+Not: "toTaste" true olanlarda "quantity" 0 olabilir. "estimatedCostTl" toplam malzeme maliyeti (TL), "macros" porsiyon başı protein/karbonhidrat/yağ (gram), "pairing" yanında iyi giden kısa öneri.`;
 
 export async function getRecipe({ title, detected = [], preferences = [], language = "tr" }) {
   const elde = detected.length ? `Evde şu malzemeler var: ${detected.join(", ")}. ` : "";
@@ -131,7 +132,8 @@ export async function getRecipe({ title, detected = [], preferences = [], langua
     "sayısal 'quantity' + 'unit' ile, damak zevkine göre olanları 'toTaste': true ile belirt. " +
     "Porsiyon başına tahmini kaloriyi 'caloriesPerServing', makroları " +
     "(protein/karbonhidrat/yağ gram) 'macros', tarifin yaklaşık toplam malzeme " +
-    "maliyetini 'estimatedCostTl' (TL) olarak ver." +
+    "maliyetini 'estimatedCostTl' (TL), yanında iyi giden bir öneriyi 'pairing' " +
+    "olarak ver." +
     prefText(preferences) +
     RECIPE_SHAPE +
     langText(language);

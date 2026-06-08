@@ -84,6 +84,7 @@ export function demoRecipe(title) {
     caloriesPerServing: 280,
     estimatedCostTl: 95,
     macros: { proteinG: 14, carbsG: 18, fatG: 16 },
+    pairing: "Yanında taze ekmek ve bir bardak çay çok yakışır.",
     ingredients: [
       { item: "Domates", quantity: 3, unit: "adet", toTaste: false },
       { item: "Yeşil biber", quantity: 2, unit: "adet", toTaste: false },

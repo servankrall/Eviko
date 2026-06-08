@@ -254,6 +254,14 @@
           <div><span id="diary-sum">0</span> / <span id="diary-goal-label">2000</span> kcal</div>
           <div class="diary-bar"><div id="diary-bar-fill" class="diary-bar-fill"></div></div>
         </div>
+        <div class="water-row">
+          <span>💧 Su</span>
+          <div class="water-ctrl">
+            <button id="water-minus" aria-label="Azalt">−</button>
+            <span><b id="water-count">0</b> / 8 bardak</span>
+            <button id="water-plus" aria-label="Artır">+</button>
+          </div>
+        </div>
         <ul id="diary-list" class="diary-list"></ul>
         <button id="btn-clear-diary" class="btn btn-ghost small hidden">Günü temizle</button>
       </section>
@@ -318,6 +326,14 @@
           <option value="tr">Türkçe</option>
           <option value="en">English</option>
         </select>
+
+        <label class="field-label">Tema rengi</label>
+        <div id="accent-picker" class="accent-picker">
+          <button type="button" class="accent-dot" data-accent="green" style="background:#2f9e44" aria-label="Yeşil"></button>
+          <button type="button" class="accent-dot" data-accent="tomato" style="background:#e8590c" aria-label="Turuncu"></button>
+          <button type="button" class="accent-dot" data-accent="blue" style="background:#1c7ed6" aria-label="Mavi"></button>
+          <button type="button" class="accent-dot" data-accent="purple" style="background:#7048e8" aria-label="Mor"></button>
+        </div>
 
         <div class="settings-actions">
           <button id="settings-save" class="btn btn-primary">Kaydet</button>

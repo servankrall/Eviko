@@ -52,6 +52,8 @@ let calGoal = Number(localStorage.getItem("eviko_cal_goal")) || 2000;
 let notes = store.get("eviko_notes", {});
 let recipeFilter = "all";
 let recipeSortTime = false;
+let accent = localStorage.getItem("eviko_accent") || "green";
+let water = store.get("eviko_water", {});
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -77,6 +79,7 @@ init();
 function init() {
   registerServiceWorker();
   applyTheme();
+  applyAccent();
   initPrefs();
   setMode(mode);
   updateBadges();
@@ -99,6 +102,31 @@ function applyTheme() {
     t === "dark" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
 }
+function applyAccent() {
+  document.documentElement.dataset.accent = accent;
+}
+function markAccent() {
+  document.querySelectorAll(".accent-dot").forEach((d) =>
+    d.classList.toggle("active", d.dataset.accent === accent)
+  );
+}
+document.querySelectorAll(".accent-dot").forEach((d) =>
+  d.addEventListener("click", () => {
+    accent = d.dataset.accent;
+    localStorage.setItem("eviko_accent", accent);
+    applyAccent();
+    markAccent();
+  })
+);
+// ---- Su takibi (günlük) ----
+function changeWater(delta) {
+  const k = todayKey();
+  water[k] = Math.max(0, (water[k] || 0) + delta);
+  store.set("eviko_water", water);
+  el("water-count").textContent = water[k];
+}
+el("water-plus").addEventListener("click", () => changeWater(1));
+el("water-minus").addEventListener("click", () => changeWater(-1));
 try {
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     if ((localStorage.getItem("eviko_theme") || "auto") === "auto") applyTheme();
@@ -658,6 +686,8 @@ function renderRecipeDetail() {
           : ""
       }
 
+      ${r.pairing ? `<div class="cal-note pairing-note">🍷 ${escapeHtml(r.pairing)}</div>` : ""}
+
       <div class="portion">
         <span class="portion-label">🍽 Porsiyon</span>
         <div class="stepper">
@@ -676,6 +706,7 @@ function renderRecipeDetail() {
         <button class="btn btn-ghost" id="btn-share">📤 Paylaş</button>
         <button class="btn btn-ghost" id="btn-video">▶️ Video</button>
         ${r.caloriesPerServing ? '<button class="btn btn-ghost" id="btn-diary-add">📒 Güne ekle</button>' : ""}
+        <button class="btn btn-ghost" id="btn-print">🖨️ Yazdır</button>
         <button class="btn btn-primary" id="btn-cook">👨‍🍳 Pişir</button>
       </div>
 
@@ -720,6 +751,7 @@ function renderRecipeDetail() {
       "_blank"
     );
   el("btn-cook").onclick = () => openCook(r);
+  el("btn-print").onclick = () => window.print();
   const da = el("btn-diary-add");
   if (da) da.onclick = () => addToDiary(r.title, r.caloriesPerServing);
   const note = el("recipe-note");
@@ -885,6 +917,7 @@ el("nav-settings").addEventListener("click", () => {
   el("api-base-input").value = localStorage.getItem("eviko_api_base") || "";
   el("theme-select").value = localStorage.getItem("eviko_theme") || "auto";
   el("lang-select").value = localStorage.getItem("eviko_lang") || "tr";
+  markAccent();
   settingsModal.classList.remove("hidden");
 });
 el("settings-close").addEventListener("click", () => settingsModal.classList.add("hidden"));
@@ -1583,6 +1616,7 @@ function renderDiary() {
   el("diary-sum").textContent = sum;
   el("diary-goal-label").textContent = calGoal;
   el("diary-goal-input").value = calGoal;
+  el("water-count").textContent = water[todayKey()] || 0;
   const fill = el("diary-bar-fill");
   fill.style.width = (calGoal > 0 ? Math.min(100, Math.round((sum / calGoal) * 100)) : 0) + "%";
   fill.style.background = sum > calGoal ? "var(--tomato)" : "var(--green)";
