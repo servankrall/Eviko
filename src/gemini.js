@@ -213,3 +213,20 @@ export async function eventPlan({ people, dish, language = "tr" }) {
     langText(language);
   return callGemini([{ text: prompt }]);
 }
+
+// 7) Market fişi okuma → ürün listesi
+const RECEIPT_SHAPE = `
+Yanıtı SADECE şu JSON ile ver: {"items":["Süt","Yumurta","Domates"]}`;
+
+export async function readReceipt({ imageBase64, mediaType, language = "tr" }) {
+  const prompt =
+    "Bu bir market fişi/alışveriş fişi fotoğrafı. Üzerindeki yiyecek, içecek ve temel mutfak " +
+    "ürünlerini sade, tekil adlarıyla listele (marka, fiyat, adet, kod yazma; ör. 'Süt', " +
+    "'Yumurta'). Yiyecek olmayan kalemleri (poşet, deterjan vb.) atla. Okunmuyorsa boş liste." +
+    RECEIPT_SHAPE +
+    langText(language);
+  return callGemini(
+    [{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }],
+    1024
+  );
+}

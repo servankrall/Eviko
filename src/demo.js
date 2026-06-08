@@ -160,6 +160,10 @@ export function demoEventPlan(people, dish) {
   };
 }
 
+export function demoReceipt() {
+  return { items: ["Süt", "Yumurta", "Ekmek", "Domates", "Beyaz peynir", "Salatalık"] };
+}
+
 export function demoCalories() {
   return {
     dishName: "Mercimek Çorbası (örnek)",

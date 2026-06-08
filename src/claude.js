@@ -501,3 +501,50 @@ export async function eventPlan({ people, dish, language = "tr" }) {
   });
   return parseJson(message);
 }
+
+// ---------------------------------------------------------------------------
+// 7) Market fişi okuma → ürün listesi
+// ---------------------------------------------------------------------------
+
+const RECEIPT_SCHEMA = {
+  type: "object",
+  properties: {
+    items: {
+      type: "array",
+      description: "Fişteki yiyecek/içecek/market ürünlerinin sade, tekil adları",
+      items: { type: "string" },
+    },
+  },
+  required: ["items"],
+  additionalProperties: false,
+};
+
+const RECEIPT_INSTRUCTION =
+  "Bu bir market fişi/alışveriş fişi fotoğrafı. Üzerindeki yiyecek, içecek ve " +
+  "temel mutfak ürünlerini sade, tekil adlarıyla listele (marka, fiyat, adet, kod " +
+  "yazma; ör. 'Süt', 'Yumurta', 'Domates'). Yiyecek olmayan kalemleri (poşet, " +
+  "deterjan, kâğıt vb.) atla. Fiş okunmuyorsa 'items' listesini boş bırak.";
+
+/**
+ * Market fişi fotoğrafından ürün adlarını çıkarır.
+ * @param {{ imageBase64: string, mediaType: string, language?: string }} args
+ */
+export async function readReceipt({ imageBase64, mediaType, language = "tr" }) {
+  const message = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    thinking: { type: "adaptive" },
+    system: PERSONA,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: mediaType, data: imageBase64 } },
+          { type: "text", text: RECEIPT_INSTRUCTION + langText(language) },
+        ],
+      },
+    ],
+    output_config: { format: { type: "json_schema", schema: RECEIPT_SCHEMA } },
+  });
+  return parseJson(message);
+}
