@@ -4,6 +4,7 @@ const el = (id) => document.getElementById(id);
 const screens = {
   capture: el("screen-capture"),
   loading: el("screen-loading"),
+  error: el("screen-error"),
   results: el("screen-results"),
   calories: el("screen-calories"),
   favorites: el("screen-favorites"),
@@ -56,6 +57,10 @@ let recipeSortTime = false;
 let accent = localStorage.getItem("eviko_accent") || "green";
 let water = store.get("eviko_water", {});
 let favFilter = "";
+let lastAction = null; // hata sonrası "tekrar dene" için
+let lastFailType = null; // "results" | "calories" | "plan"
+let lastResultsData = store.get("eviko_last_results", null);
+let lastCaloriesData = store.get("eviko_last_calories", null);
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -248,7 +253,7 @@ fileInput.addEventListener("change", async (e) => {
     el("dropzone").classList.add("hidden");
     el("preview-wrap").classList.remove("hidden");
   } catch (err) {
-    alert("Fotoğraf okunamadı. Lütfen başka bir görsel deneyin.");
+    toast("Fotoğraf okunamadı, başka bir görsel dene.");
     console.error(err);
   }
 });
@@ -313,6 +318,7 @@ el("btn-analyze").addEventListener("click", () => {
 });
 
 async function runIngredients() {
+  lastAction = runIngredients;
   showScreen("loading");
   el("loading-text").textContent = "Fotoğraf inceleniyor…";
   el("loading-sub").textContent = "Malzemeler tanınıyor ve tarifler hazırlanıyor.";
@@ -326,10 +332,11 @@ async function runIngredients() {
           language: langPref(),
         });
     renderResults(data);
+    cacheResults(data);
     saveHistory("ingredients", data);
     showScreen("results");
   } catch (err) {
-    fail(err);
+    fail(err, "results");
   }
 }
 
@@ -341,6 +348,7 @@ el("manual-form").addEventListener("submit", (e) => {
 });
 
 async function runManual(text) {
+  lastAction = () => runManual(text);
   showScreen("loading");
   el("loading-text").textContent = "Malzemeler değerlendiriliyor…";
   el("loading-sub").textContent = "Sana uygun yemekler hazırlanıyor.";
@@ -349,16 +357,18 @@ async function runManual(text) {
       ? await window.GeminiClient.analyzeText(text, effectivePrefs())
       : await serverPost("/api/analyze-text", { text, preferences: effectivePrefs(), language: langPref() });
     renderResults(data);
+    cacheResults(data);
     saveHistory("ingredients", data);
     showScreen("results");
   } catch (err) {
-    fail(err);
+    fail(err, "results");
   }
 }
 
 // ---- Haftalık yemek planı ----
 el("btn-plan").addEventListener("click", runPlan);
 async function runPlan() {
+  lastAction = runPlan;
   showScreen("loading");
   el("loading-text").textContent = "Haftalık plan hazırlanıyor…";
   el("loading-sub").textContent = "Sana uygun 7 günlük menü oluşturuluyor.";
@@ -373,7 +383,7 @@ async function runPlan() {
     renderPlan(data);
     showScreen("plan");
   } catch (err) {
-    fail(err);
+    fail(err, "plan");
   }
 }
 
@@ -429,6 +439,7 @@ async function sharePlan() {
 }
 
 async function runCalories() {
+  lastAction = runCalories;
   showScreen("loading");
   el("loading-text").textContent = "Yemek inceleniyor…";
   el("loading-sub").textContent = "Kalori ve besin değerleri hesaplanıyor.";
@@ -441,10 +452,11 @@ async function runCalories() {
           language: langPref(),
         });
     renderCalories(data);
+    cacheCalories(data);
     saveHistory("dish", data);
     showScreen("calories");
   } catch (err) {
-    fail(err);
+    fail(err, "calories");
   }
 }
 
@@ -475,11 +487,99 @@ async function serverPost(path, body) {
   return data;
 }
 
-function fail(err) {
-  console.error(err);
-  alert(err.message || "Bir hata oluştu. Lütfen tekrar deneyin.");
-  showScreen("capture");
+function cacheResults(data) {
+  lastResultsData = data;
+  store.set("eviko_last_results", data);
 }
+function cacheCalories(data) {
+  lastCaloriesData = data;
+  store.set("eviko_last_calories", data);
+}
+
+// Hatayı kullanıcı diline çevirir: sakin başlık + çözüm önerisi.
+function friendlyError(err) {
+  const m = (err && err.message) || "";
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (offline) {
+    return {
+      emoji: "📡",
+      title: "İnternet yok",
+      text: "Bağlantın kapalı görünüyor. Açınca tekrar dene. Kaydettiğin favori tarifler internetsiz de açılır.",
+      key: false,
+    };
+  }
+  if (/anahtar\S* (yok|gerek)|geçersiz|yetkisiz/i.test(m)) {
+    return {
+      emoji: "🔑",
+      title: "Ücretsiz anahtar gerekli",
+      text: "Devam etmek için kendi ücretsiz Gemini anahtarını ekle — 30 saniye sürer ve bir daha beklemezsin.",
+      key: true,
+    };
+  }
+  if (/sunucu|bağlan|ulaşıl|bulunamadı/i.test(m)) {
+    return {
+      emoji: "📡",
+      title: "Sunucuya ulaşılamadı",
+      text: "İnternetin açık ama servise ulaşamadık. Tekrar dene; ya da kendi ücretsiz anahtarını ekleyerek sunucuya hiç ihtiyaç duymadan çalış.",
+      key: true,
+    };
+  }
+  if (/yoğun|çok kişi|yanıt alınamadı|kullanıyor|429|overload/i.test(m)) {
+    return {
+      emoji: "⏳",
+      title: "Şu an yoğunluk var",
+      text: "Ücretsiz servis çok kullanılıyor. Birazdan tekrar dene — ya da hiç beklememek için kendi ücretsiz anahtarını ekle.",
+      key: true,
+    };
+  }
+  return {
+    emoji: "😕",
+    title: "Bir şeyler ters gitti",
+    text: m || "Lütfen tekrar dene.",
+    key: true,
+  };
+}
+
+function fail(err, type) {
+  console.error(err);
+  lastFailType = type || null;
+  const info = friendlyError(err);
+  el("error-emoji").textContent = info.emoji;
+  el("error-title").textContent = info.title;
+  el("error-text").textContent = info.text;
+  el("error-key").classList.toggle("hidden", !info.key);
+  const cached =
+    type === "results" ? lastResultsData : type === "calories" ? lastCaloriesData : null;
+  el("error-cached").classList.toggle("hidden", !cached);
+  showScreen("error");
+}
+
+function openSettingsToKey() {
+  el("nav-settings").click();
+  setTimeout(() => {
+    const k = el("gemini-key-input");
+    if (k) k.focus();
+  }, 60);
+}
+
+el("error-retry").addEventListener("click", () => {
+  if (typeof lastAction === "function") lastAction();
+  else showScreen("capture");
+});
+el("error-key").addEventListener("click", () => {
+  showScreen("capture");
+  openSettingsToKey();
+});
+el("error-cached").addEventListener("click", () => {
+  if (lastFailType === "results" && lastResultsData) {
+    renderResults(lastResultsData);
+    showScreen("results");
+  } else if (lastFailType === "calories" && lastCaloriesData) {
+    renderCalories(lastCaloriesData);
+    showScreen("calories");
+  }
+});
+el("error-home").addEventListener("click", () => showScreen("capture"));
 
 // ---- Sonuçları çiz (malzeme modu) ----
 function renderResults(data) {
