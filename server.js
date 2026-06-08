@@ -4,7 +4,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getProvider } from "./src/provider.js";
-import { demoAnalyze, demoRecipe, demoCalories, demoPlan, demoSubstitute } from "./src/demo.js";
+import {
+  demoAnalyze,
+  demoRecipe,
+  demoCalories,
+  demoPlan,
+  demoSubstitute,
+  demoEventPlan,
+} from "./src/demo.js";
 import * as db from "./src/db.js";
 import {
   hashPassword,
@@ -199,6 +206,24 @@ app.post("/api/substitute", async (req, res) => {
   } catch (err) {
     console.error("İkame hatası:", err);
     res.status(500).json({ error: "Alternatif bulunamadı." });
+  }
+});
+
+// Davet / porsiyon hesaplayıcı
+app.post("/api/event-plan", async (req, res) => {
+  try {
+    const { people, dish, language } = req.body || {};
+    if (!dish) return res.status(400).json({ error: "dish gerekli." });
+    if (DEMO) return res.json({ ...demoEventPlan(people, dish), demo: true });
+    const result = await provider.impl.eventPlan({
+      people: Number(people) || 4,
+      dish: String(dish),
+      language: language || "tr",
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("Davet planı hatası:", err);
+    res.status(500).json({ error: "Hesaplama yapılamadı. Lütfen tekrar deneyin." });
   }
 });
 

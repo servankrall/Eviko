@@ -112,11 +112,21 @@
         </div>
 
         <button id="btn-plan" class="btn btn-ghost plan-btn">📅 Haftalık yemek planı</button>
+        <button id="btn-event" class="btn btn-ghost plan-btn">🎉 Davet / porsiyon hesaplayıcı</button>
 
         <div class="tools-row">
-          <button id="btn-surprise-dish" class="btn btn-ghost">🎲 Bugün ne pişeyim?</button>
+          <button id="btn-surprise-dish" class="btn btn-ghost">🎡 Ne yesem?</button>
           <button id="btn-diary" class="btn btn-ghost">📒 Günlük</button>
           <button id="btn-converter" class="btn btn-ghost">📐 Çevirici</button>
+          <button id="btn-badges" class="btn btn-ghost">🏆 Rozetler</button>
+        </div>
+
+        <div id="tip-card" class="tip-card">
+          <span class="tip-icon">💡</span>
+          <div>
+            <div class="tip-label">Günün mutfak ipucu</div>
+            <p id="tip-text" class="tip-text"></p>
+          </div>
         </div>
 
         <div id="pantry-box" class="pantry-box">
@@ -446,6 +456,45 @@
         </div>
         <div id="conv-result" class="conv-result"></div>
         <p class="muted small">Yaklaşık mutfak ölçüleridir (hacim).</p>
+      </div>
+    </div>
+
+    <!-- Ne yesem? çarkı -->
+    <div id="wheel-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="wheel-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>🎡 Ne yesem?</h2>
+        <p class="muted small">Karar veremiyorsan çevir, Eviko senin için seçsin.</p>
+        <div id="wheel-display" class="wheel-display">🍽️</div>
+        <div class="wheel-actions">
+          <button id="wheel-spin" class="btn btn-primary">Çevir 🎲</button>
+          <button id="wheel-open" class="btn btn-ghost hidden">Tarifi aç →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rozetler / başarımlar -->
+    <div id="badges-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="badges-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>🏆 Rozetlerim</h2>
+        <p id="badges-summary" class="muted small"></p>
+        <div id="badges-grid" class="badges-grid"></div>
+      </div>
+    </div>
+
+    <!-- Davet / porsiyon hesaplayıcı -->
+    <div id="event-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="event-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>🎉 Davet / porsiyon hesaplayıcı</h2>
+        <p class="muted small">Kaç kişiye, ne hazırlıyorsun? Malzeme miktarlarını çıkarayım.</p>
+        <form id="event-form" class="event-form">
+          <input id="event-people" type="number" min="1" max="200" value="6" aria-label="Kişi sayısı" />
+          <input id="event-dish" type="text" placeholder="ör. mangal, pilav, kısır" autocomplete="off" />
+          <button class="btn btn-primary" type="submit">Hesapla</button>
+        </form>
+        <div id="event-result" class="event-result"></div>
       </div>
     </div>
 

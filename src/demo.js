@@ -140,6 +140,26 @@ export function demoSubstitute(item) {
   };
 }
 
+export function demoEventPlan(people, dish) {
+  const p = Math.max(1, Number(people) || 4);
+  return {
+    dish: dish || "Mangal",
+    people: p,
+    items: [
+      { item: "Köftelik kıyma", quantity: `${(p * 0.15).toFixed(1)} kg`, note: "kişi başı ~150 g" },
+      { item: "Ekmek", quantity: `${Math.ceil(p / 3)} adet`, note: "" },
+      { item: "Domates & biber", quantity: `${(p * 0.2).toFixed(1)} kg`, note: "" },
+      { item: "Soğan", quantity: `${Math.ceil(p / 4)} adet`, note: "" },
+      { item: "Ayran", quantity: `${p} adet`, note: "kişi başı 1" },
+    ],
+    estimatedCostTl: p * 120,
+    tips: [
+      "Demo modu: gerçek hesap için API anahtarı ekleyin.",
+      "Eti bir gece önceden marine etmek lezzeti artırır.",
+    ],
+  };
+}
+
 export function demoCalories() {
   return {
     dishName: "Mercimek Çorbası (örnek)",

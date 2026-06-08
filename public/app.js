@@ -92,6 +92,8 @@ function init() {
   setMode(mode);
   updateBadges();
   renderPantry();
+  renderTip();
+  trackActiveDay();
   checkHealth();
   refreshAuth();
   loadHome();
@@ -1789,10 +1791,202 @@ const DISHES = [
   "Etli nohut", "Bulgur pilavı", "Sebzeli omlet", "Fırın tavuk", "Makarna", "Şakşuka",
   "Türlü", "Yeşil mercimek yemeği", "Kısır", "Mücver", "Pırasa yemeği", "Yoğurtlu kabak",
 ];
+// ---- Günün mutfak ipucu ----
+const TIPS = [
+  "Soğanı doğramadan önce 10 dakika buzdolabında beklet; gözlerin daha az yanar.",
+  "Makarna suyuna bol tuz at — sosa biraz makarna suyu eklemek kıvamı güzelleştirir.",
+  "Eti tuzlamadan önce oda sıcaklığına getir; daha eşit pişer.",
+  "Sarımsağı bıçağın yan yüzüyle ez, kabuğu kolayca soyulur.",
+  "Domatesin kabuğunu kolay soymak için dibine çarpı çiz, kaynar suya 20 sn daldır.",
+  "Pilavı demlemeden önce 5 dakika dinlendir; taneler ayrı ayrı olur.",
+  "Limonu kesmeden önce tezgaha bastırıp yuvarla; daha çok su verir.",
+  "Yumurtanın tazesini anlamak için suya koy: dibe yatıyorsa tazedir.",
+  "Yeşillikleri yıkadıktan sonra iyice kurula; ıslakken çabuk bozulur.",
+  "Çorbayı blenderdan geçirirken kapağı bezle tut; sıcak sıçramaz.",
+  "Hamur işlerinde tereyağını soğuk kullan; daha çıtır olur.",
+  "Bayat ekmeği rendele, dondur; köfte ve gratende işine yarar.",
+  "Avokadoyu çekirdeğiyle sakla; kararması yavaşlar.",
+  "Patatesi haşlarken suya biraz sirke ekle; dağılmadan pişer.",
+  "Baharatları kavururken kokusu çıkınca ekle; tadı daha yoğun olur.",
+  "Zeytinyağını çok kızdırma; dumanlanınca tadı bozulur, kızartmaya ayçiçeği daha uygun.",
+  "Soğanı karamelize ederken bir tutam tuz ekle; suyunu bırakıp daha çabuk pişer.",
+  "Et suyunu dondurma kalıbında sakla; tek tek kullanırsın.",
+  "Salatayı servisten hemen önce sosla; erken soslarsan sular.",
+  "Bıçağını düzenli bile; kör bıçak hem zor keser hem tehlikelidir.",
+  "Muzları diğer meyvelerden ayrı tut; hepsini hızla olgunlaştırır.",
+  "Tava çok dolu olmasın; sıkışık malzeme kavrulmaz, haşlanır.",
+];
+function dayOfYear() {
+  const d = new Date();
+  return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+}
+function renderTip() {
+  const t = el("tip-text");
+  if (t) t.textContent = TIPS[dayOfYear() % TIPS.length];
+}
+
+// ---- Aktif gün takibi (rozet serisi için) ----
+function trackActiveDay() {
+  const days = store.get("eviko_active_days", []);
+  const k = todayKey();
+  if (!days.includes(k)) {
+    days.push(k);
+    store.set("eviko_active_days", days.slice(-400));
+  }
+}
+function currentStreak() {
+  const days = new Set(store.get("eviko_active_days", []));
+  let streak = 0;
+  const d = new Date();
+  while (days.has(`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`)) {
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+// ---- "Ne yesem?" çarkı ----
+const wheelModal = el("wheel-modal");
+let wheelPick = null;
+let wheelSpinning = false;
 el("btn-surprise-dish").addEventListener("click", () => {
-  detectedNames = [];
-  openRecipeByTitle(DISHES[Math.floor(Math.random() * DISHES.length)]);
+  wheelPick = null;
+  el("wheel-open").classList.add("hidden");
+  el("wheel-display").textContent = "🍽️";
+  wheelModal.classList.remove("hidden");
 });
+el("wheel-close").addEventListener("click", () => wheelModal.classList.add("hidden"));
+wheelModal.addEventListener("click", (e) => {
+  if (e.target === wheelModal) wheelModal.classList.add("hidden");
+});
+el("wheel-spin").addEventListener("click", () => {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  el("wheel-open").classList.add("hidden");
+  const disp = el("wheel-display");
+  const total = 22;
+  let i = 0;
+  const step = () => {
+    disp.textContent = DISHES[Math.floor(Math.random() * DISHES.length)];
+    i++;
+    if (i >= total) {
+      wheelPick = disp.textContent;
+      disp.textContent = "🍽️ " + wheelPick;
+      el("wheel-open").classList.remove("hidden");
+      wheelSpinning = false;
+      return;
+    }
+    setTimeout(step, 50 + i * i * 1.2); // hızlı başlar, yavaşlar
+  };
+  step();
+});
+el("wheel-open").addEventListener("click", () => {
+  if (!wheelPick) return;
+  wheelModal.classList.add("hidden");
+  detectedNames = [];
+  openRecipeByTitle(wheelPick);
+});
+
+// ---- Rozetler / başarımlar ----
+const badgesModal = el("badges-modal");
+el("btn-badges").addEventListener("click", () => {
+  renderBadges();
+  badgesModal.classList.remove("hidden");
+});
+el("badges-close").addEventListener("click", () => badgesModal.classList.add("hidden"));
+badgesModal.addEventListener("click", (e) => {
+  if (e.target === badgesModal) badgesModal.classList.add("hidden");
+});
+function renderBadges() {
+  const favCount = favorites.length;
+  const diaryDays = new Set(diary.map((e) => e.day)).size;
+  const historyCount = history.length;
+  const streak = currentStreak();
+  const waterMax = Math.max(0, ...Object.values(water).map((n) => Number(n) || 0));
+  const defs = [
+    { emoji: "⭐", title: "İlk favori", desc: "Bir tarifi favorile", done: favCount >= 1 },
+    { emoji: "🌟", title: "Koleksiyoncu", desc: "5 favori tarif", done: favCount >= 5 },
+    { emoji: "📒", title: "Günlükçü", desc: "3 farklı gün günlüğe yaz", done: diaryDays >= 3 },
+    { emoji: "🔥", title: "Seri başladı", desc: "3 gün üst üste kullan", done: streak >= 3 },
+    { emoji: "💧", title: "Susuz kalma", desc: "Bir günde 8 bardak su", done: waterMax >= 8 },
+    { emoji: "🔎", title: "Meraklı", desc: "10 kez ara/incele", done: historyCount >= 10 },
+    { emoji: "🍳", title: "Şef adayı", desc: "20 favori tarif", done: favCount >= 20 },
+    { emoji: "🏆", title: "Eviko ustası", desc: "7 gün seri", done: streak >= 7 },
+  ];
+  const earned = defs.filter((d) => d.done).length;
+  el("badges-summary").textContent = `${earned}/${defs.length} rozet · 🔥 ${streak} günlük seri`;
+  el("badges-grid").innerHTML = defs
+    .map(
+      (d) =>
+        `<div class="badge-card ${d.done ? "earned" : "locked"}">
+           <div class="badge-emoji">${d.emoji}</div>
+           <div class="badge-title">${escapeHtml(d.title)}</div>
+           <div class="badge-desc muted small">${escapeHtml(d.desc)}</div>
+         </div>`
+    )
+    .join("");
+}
+
+// ---- Davet / porsiyon hesaplayıcı ----
+const eventModal = el("event-modal");
+el("btn-event").addEventListener("click", () => {
+  el("event-result").innerHTML = "";
+  eventModal.classList.remove("hidden");
+});
+el("event-close").addEventListener("click", () => eventModal.classList.add("hidden"));
+eventModal.addEventListener("click", (e) => {
+  if (e.target === eventModal) eventModal.classList.add("hidden");
+});
+el("event-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const people = Math.max(1, Number(el("event-people").value) || 1);
+  const dish = el("event-dish").value.trim();
+  if (!dish) {
+    toast("Ne hazırlayacağını yaz.");
+    return;
+  }
+  const box = el("event-result");
+  box.innerHTML = '<p class="muted small">Hesaplanıyor…</p>';
+  try {
+    const data = useGemini()
+      ? await window.GeminiClient.eventPlan(people, dish)
+      : await serverPost("/api/event-plan", { people, dish, language: langPref() });
+    renderEvent(data);
+  } catch (err) {
+    box.innerHTML = `<p class="muted small">${escapeHtml(err.message || "Hesaplama yapılamadı.")}</p>`;
+  }
+});
+function renderEvent(data) {
+  const items = (data && data.items) || [];
+  const box = el("event-result");
+  if (!items.length) {
+    box.innerHTML = '<p class="muted small">Liste oluşturulamadı, tekrar dene.</p>';
+    return;
+  }
+  box.innerHTML =
+    `<div class="event-head">${escapeHtml(data.dish || "")} · ${data.people || ""} kişi${
+      data.estimatedCostTl ? ` · ~${data.estimatedCostTl} TL` : ""
+    }</div>` +
+    '<ul class="event-list">' +
+    items
+      .map(
+        (it) =>
+          `<li><span class="ev-q">${escapeHtml(it.quantity || "")}</span> <span class="ev-i">${escapeHtml(
+            it.item || ""
+          )}</span>${it.note ? `<span class="muted small"> — ${escapeHtml(it.note)}</span>` : ""}</li>`
+      )
+      .join("") +
+    "</ul>" +
+    '<button class="btn btn-ghost" id="event-to-shop">🛒 Listeyi alışverişe ekle</button>' +
+    (data.tips && data.tips.length
+      ? `<div class="event-tips muted small">💡 ${data.tips.map(escapeHtml).join("<br>💡 ")}</div>`
+      : "");
+  el("event-to-shop").onclick = () => {
+    addToShopping(items.map((it) => it.item).filter(Boolean));
+    toast("Malzemeler listeye eklendi 🛒");
+    eventModal.classList.add("hidden");
+  };
+}
 
 // ---- Beslenme günlüğü (Bugün) ----
 function todayKey() {
