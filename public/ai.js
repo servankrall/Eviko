@@ -180,8 +180,8 @@ Yanıtı SADECE şu JSON yapısında ver:
 
   const PLAN_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
-{"days":[{"day":"Pazartesi","title":"yemek adı","description":"kısa açıklama"}]}
-Tam 7 gün ver (Pazartesi'den Pazar'a).`;
+{"days":[{"day":"Pazartesi","title":"yemek adı","description":"kısa açıklama","ingredients":["ana malzeme","..."]}]}
+Tam 7 gün ver (Pazartesi'den Pazar'a). Her gün için 4-6 ana malzemeyi "ingredients" olarak yaz.`;
 
   async function analyze(imageBase64, mediaType, prefs = []) {
     const prompt =
@@ -242,7 +242,7 @@ Tam 7 gün ver (Pazartesi'den Pazar'a).`;
     const prompt =
       "Bir haftalık (7 gün) pratik akşam yemeği planı oluştur. " +
       elde +
-      "Çeşitli, dengeli ve ev yapımı yemekler seç." +
+      "Çeşitli, dengeli ve ev yapımı yemekler seç. Her gün için ana malzemeleri de listele." +
       prefsLine(prefs) +
       favLine() +
       PLAN_SHAPE +
@@ -250,5 +250,14 @@ Tam 7 gün ver (Pazartesi'den Pazar'a).`;
     return call([{ text: prompt }]);
   }
 
-  window.GeminiClient = { hasKey, analyze, analyzeText, recipe, calories, planWeek };
+  async function substitute(item, title) {
+    const prompt =
+      `"${title || "bu tarif"}" için "${item}" malzemesi yerine kullanılabilecek 3-4 pratik ` +
+      "alternatif öner; her biri için çok kısa bir not ekle.\n" +
+      `Yanıtı SADECE şu JSON ile ver: {"item":"${item}","alternatives":[{"name":"alternatif","note":"kısa açıklama"}]}` +
+      langLine();
+    return call([{ text: prompt }]);
+  }
+
+  window.GeminiClient = { hasKey, analyze, analyzeText, recipe, calories, planWeek, substitute };
 })();

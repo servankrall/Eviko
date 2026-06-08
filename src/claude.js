@@ -363,8 +363,13 @@ const PLAN_SCHEMA = {
           day: { type: "string", description: "Gün adı" },
           title: { type: "string", description: "O günün yemeği" },
           description: { type: "string", description: "Kısa açıklama" },
+          ingredients: {
+            type: "array",
+            description: "O günün 4-6 ana malzemesi",
+            items: { type: "string" },
+          },
         },
-        required: ["day", "title", "description"],
+        required: ["day", "title", "description", "ingredients"],
         additionalProperties: false,
       },
     },
@@ -384,7 +389,7 @@ export async function planWeek({ preferences = [], detected = [], language = "tr
   const instruction =
     "Bir haftalık (7 gün, Pazartesi'den Pazar'a) pratik akşam yemeği planı oluştur. " +
     elde +
-    "Çeşitli, dengeli ve ev yapımı yemekler seç." +
+    "Çeşitli, dengeli ve ev yapımı yemekler seç. Her gün için 4-6 ana malzemeyi de yaz." +
     prefText(preferences) +
     langText(language);
   const message = await getClient().messages.create({
@@ -394,6 +399,51 @@ export async function planWeek({ preferences = [], detected = [], language = "tr
     system: PERSONA,
     messages: [{ role: "user", content: instruction }],
     output_config: { format: { type: "json_schema", schema: PLAN_SCHEMA } },
+  });
+  return parseJson(message);
+}
+
+// ---------------------------------------------------------------------------
+// 5) Malzeme ikamesi
+// ---------------------------------------------------------------------------
+
+const SUBSTITUTE_SCHEMA = {
+  type: "object",
+  properties: {
+    item: { type: "string" },
+    alternatives: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          note: { type: "string" },
+        },
+        required: ["name", "note"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["item", "alternatives"],
+  additionalProperties: false,
+};
+
+/**
+ * Bir malzeme yerine kullanılabilecek alternatifleri önerir.
+ * @param {{ item: string, title?: string, language?: string }} args
+ */
+export async function substitute({ item, title = "", language = "tr" }) {
+  const instruction =
+    `"${title || "bu tarif"}" için "${item}" malzemesi yerine kullanılabilecek 3-4 ` +
+    "pratik alternatif öner; her biri için çok kısa bir not ekle." +
+    langText(language);
+  const message = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    thinking: { type: "adaptive" },
+    system: PERSONA,
+    messages: [{ role: "user", content: instruction }],
+    output_config: { format: { type: "json_schema", schema: SUBSTITUTE_SCHEMA } },
   });
   return parseJson(message);
 }

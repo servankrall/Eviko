@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getProvider } from "./src/provider.js";
-import { demoAnalyze, demoRecipe, demoCalories, demoPlan } from "./src/demo.js";
+import { demoAnalyze, demoRecipe, demoCalories, demoPlan, demoSubstitute } from "./src/demo.js";
 import * as db from "./src/db.js";
 import {
   hashPassword,
@@ -181,6 +181,24 @@ app.post("/api/plan", async (req, res) => {
     res.status(500).json({
       error: "Haftalık plan hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
+  }
+});
+
+// Malzeme ikamesi (yerine ne kullanılır?)
+app.post("/api/substitute", async (req, res) => {
+  try {
+    const { item, title, language } = req.body || {};
+    if (!item) return res.status(400).json({ error: "item gerekli." });
+    if (DEMO) return res.json({ ...demoSubstitute(item), demo: true });
+    const result = await provider.impl.substitute({
+      item: String(item),
+      title: title || "",
+      language: language || "tr",
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("İkame hatası:", err);
+    res.status(500).json({ error: "Alternatif bulunamadı." });
   }
 });
 
