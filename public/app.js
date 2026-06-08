@@ -39,6 +39,7 @@ const store = {
 let favorites = store.get("eviko_favorites", []);
 let shopping = store.get("eviko_shopping", []);
 let prefs = store.get("eviko_prefs", []);
+let avoid = store.get("eviko_avoid", []);
 let history = store.get("eviko_history", []);
 let lastRecipes = [];
 let lastPlan = [];
@@ -82,6 +83,7 @@ function init() {
   applyTheme();
   applyAccent();
   initPrefs();
+  renderAvoid();
   setMode(mode);
   updateBadges();
   renderPantry();
@@ -147,6 +149,39 @@ function initPrefs() {
     });
   });
 }
+
+// Diyet tercihleri + "sevmediğim malzemeler" birleştirilip AI'ya gönderilir.
+function effectivePrefs() {
+  if (!avoid.length) return prefs;
+  return prefs.concat([`Şu malzemeleri kesinlikle kullanma: ${avoid.join(", ")}`]);
+}
+function renderAvoid() {
+  const box = el("avoid-chips");
+  if (!box) return;
+  box.innerHTML = avoid
+    .map(
+      (a, i) =>
+        `<span class="chip"><span>${escapeHtml(a)}</span><button class="chip-x" data-i="${i}" aria-label="Sil">×</button></span>`
+    )
+    .join("");
+  box.querySelectorAll(".chip-x").forEach((b) =>
+    b.addEventListener("click", () => {
+      avoid.splice(Number(b.dataset.i), 1);
+      store.set("eviko_avoid", avoid);
+      renderAvoid();
+    })
+  );
+}
+el("avoid-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = el("avoid-input").value.trim();
+  if (v && !avoid.some((x) => x.toLocaleLowerCase("tr") === v.toLocaleLowerCase("tr"))) {
+    avoid.push(v);
+    store.set("eviko_avoid", avoid);
+  }
+  el("avoid-input").value = "";
+  renderAvoid();
+});
 
 async function checkHealth() {
   const banner = el("banner");
@@ -283,11 +318,11 @@ async function runIngredients() {
   el("loading-sub").textContent = "Malzemeler tanınıyor ve tarifler hazırlanıyor.";
   try {
     const data = useGemini()
-      ? await window.GeminiClient.analyze(selectedImage.base64, selectedImage.mediaType, prefs)
+      ? await window.GeminiClient.analyze(selectedImage.base64, selectedImage.mediaType, effectivePrefs())
       : await serverPost("/api/analyze", {
           image: selectedImage.base64,
           mediaType: selectedImage.mediaType,
-          preferences: prefs,
+          preferences: effectivePrefs(),
           language: langPref(),
         });
     renderResults(data);
@@ -311,8 +346,8 @@ async function runManual(text) {
   el("loading-sub").textContent = "Sana uygun yemekler hazırlanıyor.";
   try {
     const data = useGemini()
-      ? await window.GeminiClient.analyzeText(text, prefs)
-      : await serverPost("/api/analyze-text", { text, preferences: prefs, language: langPref() });
+      ? await window.GeminiClient.analyzeText(text, effectivePrefs())
+      : await serverPost("/api/analyze-text", { text, preferences: effectivePrefs(), language: langPref() });
     renderResults(data);
     saveHistory("ingredients", data);
     showScreen("results");
@@ -329,9 +364,9 @@ async function runPlan() {
   el("loading-sub").textContent = "Sana uygun 7 günlük menü oluşturuluyor.";
   try {
     const data = useGemini()
-      ? await window.GeminiClient.planWeek(prefs, detectedNames)
+      ? await window.GeminiClient.planWeek(effectivePrefs(), detectedNames)
       : await serverPost("/api/plan", {
-          preferences: prefs,
+          preferences: effectivePrefs(),
           detected: detectedNames,
           language: langPref(),
         });
@@ -616,11 +651,11 @@ async function openRecipeByTitle(title) {
   modal.classList.remove("hidden");
   try {
     const data = useGemini()
-      ? await window.GeminiClient.recipe(title, detectedNames, prefs)
+      ? await window.GeminiClient.recipe(title, detectedNames, effectivePrefs())
       : await serverPost("/api/recipe", {
           title,
           detected: detectedNames,
-          preferences: prefs,
+          preferences: effectivePrefs(),
           language: langPref(),
         });
     openRecipeObject(data);
@@ -972,9 +1007,9 @@ el("settings-clear").addEventListener("click", () => {
 
 // ---- Veri yedekleme / geri yükleme (cihazda) ----
 const BACKUP_KEYS = [
-  "eviko_favorites", "eviko_shopping", "eviko_prefs", "eviko_history",
-  "eviko_pantry", "eviko_diary", "eviko_notes", "eviko_water",
-  "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
+  "eviko_favorites", "eviko_shopping", "eviko_prefs", "eviko_avoid",
+  "eviko_history", "eviko_pantry", "eviko_diary", "eviko_notes",
+  "eviko_water", "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
 ];
 el("btn-backup").addEventListener("click", () => {
   const payload = { _eviko: true, version: 1, savedAt: new Date().toISOString(), data: {} };

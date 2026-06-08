@@ -1294,12 +1294,14 @@ h2 {
   font-size: 1.05rem;
   margin: 0 0 4px;
 }
-.pantry-form {
+.pantry-form,
+.avoid-form {
   display: flex;
   gap: 8px;
   margin: 10px 0;
 }
-.pantry-form input {
+.pantry-form input,
+.avoid-form input {
   flex: 1;
   border: 1.5px solid var(--line);
   border-radius: 999px;
@@ -1322,7 +1324,8 @@ h2 {
   margin-top: 8px;
 }
 [data-theme="dark"] .search-form input,
-[data-theme="dark"] .pantry-form input {
+[data-theme="dark"] .pantry-form input,
+[data-theme="dark"] .avoid-form input {
   background: #1d2226;
   color: var(--ink);
 }
