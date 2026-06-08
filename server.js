@@ -11,6 +11,7 @@ import {
   demoPlan,
   demoSubstitute,
   demoEventPlan,
+  demoReceipt,
 } from "./src/demo.js";
 import * as db from "./src/db.js";
 import {
@@ -224,6 +225,24 @@ app.post("/api/event-plan", async (req, res) => {
   } catch (err) {
     console.error("Davet planı hatası:", err);
     res.status(500).json({ error: "Hesaplama yapılamadı. Lütfen tekrar deneyin." });
+  }
+});
+
+// Market fişi okuma → ürün listesi
+app.post("/api/receipt", async (req, res) => {
+  try {
+    const { image, mediaType, language } = req.body || {};
+    if (!image) return res.status(400).json({ error: "image gerekli." });
+    if (DEMO) return res.json({ ...demoReceipt(), demo: true });
+    const result = await provider.impl.readReceipt({
+      imageBase64: image,
+      mediaType: mediaType || "image/jpeg",
+      language: language || "tr",
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("Fiş okuma hatası:", err);
+    res.status(500).json({ error: "Fiş okunamadı. Daha net bir fotoğraf deneyin." });
   }
 });
 

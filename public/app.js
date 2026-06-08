@@ -1605,6 +1605,49 @@ el("btn-pantry-suggest").addEventListener("click", () => {
   if (pantry.length) runManual(pantry.join(", "));
 });
 
+// Fiş okut → buzdolabına ekle
+el("btn-receipt").addEventListener("click", () => el("receipt-input").click());
+el("receipt-input").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  let img;
+  try {
+    img = await resizeImage(file);
+  } catch {
+    toast("Fotoğraf okunamadı, başka bir görsel dene.");
+    return;
+  }
+  toast("Fiş okunuyor… 📷");
+  try {
+    const data = useGemini()
+      ? await window.GeminiClient.readReceipt(img.base64, img.mediaType)
+      : await serverPost("/api/receipt", {
+          image: img.base64,
+          mediaType: img.mediaType,
+          language: langPref(),
+        });
+    const items = (data && data.items) || [];
+    if (!items.length) {
+      toast("Fişte ürün okunamadı, daha net bir fotoğraf dene.");
+      return;
+    }
+    let added = 0;
+    items.forEach((it) => {
+      const v = String(it).trim();
+      if (v && !pantry.some((x) => x.toLocaleLowerCase("tr") === v.toLocaleLowerCase("tr"))) {
+        pantry.push(v);
+        added++;
+      }
+    });
+    store.set("eviko_pantry", pantry);
+    renderPantry();
+    toast(added ? `${added} ürün buzdolabına eklendi 🧊` : "Hepsi zaten ekliydi.");
+  } catch (err) {
+    toast(err.message || "Fiş okunamadı.");
+  }
+});
+
 // ---- Uygulamayı yükle (PWA) ----
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();

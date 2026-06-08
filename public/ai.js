@@ -269,7 +269,17 @@ Tam 7 gün ver (Pazartesi'den Pazar'a). Her gün için 4-6 ana malzemeyi "ingred
     return call([{ text: prompt }]);
   }
 
+  async function readReceipt(imageBase64, mediaType) {
+    const prompt =
+      "Bu bir market fişi/alışveriş fişi fotoğrafı. Üzerindeki yiyecek, içecek ve temel mutfak " +
+      "ürünlerini sade, tekil adlarıyla listele (marka, fiyat, adet, kod yazma; ör. 'Süt', " +
+      "'Yumurta'). Yiyecek olmayan kalemleri (poşet, deterjan vb.) atla. Okunmuyorsa boş liste.\n" +
+      'Yanıtı SADECE şu JSON ile ver: {"items":["Süt","Yumurta","Domates"]}' +
+      langLine();
+    return call([{ inlineData: { mimeType: mediaType, data: imageBase64 } }, { text: prompt }]);
+  }
+
   window.GeminiClient = {
-    hasKey, analyze, analyzeText, recipe, calories, planWeek, substitute, eventPlan,
+    hasKey, analyze, analyzeText, recipe, calories, planWeek, substitute, eventPlan, readReceipt,
   };
 })();
