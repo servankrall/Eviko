@@ -274,8 +274,14 @@
             <button id="water-plus" aria-label="Artır">+</button>
           </div>
         </div>
+        <form id="diary-manual-form" class="diary-manual-form">
+          <input id="diary-food-name" type="text" placeholder="Yemek/atıştırmalık adı" autocomplete="off" />
+          <input id="diary-food-kcal" type="number" min="0" step="10" placeholder="kcal" />
+          <button class="btn btn-ghost" type="submit">+ Ekle</button>
+        </form>
         <ul id="diary-list" class="diary-list"></ul>
         <button id="btn-clear-diary" class="btn btn-ghost small hidden">Günü temizle</button>
+        <div id="diary-week" class="diary-week"></div>
       </section>
     </main>
 

@@ -1,5 +1,5 @@
 // Eviko service worker — uygulama kabuğunu önbelleğe alır (PWA / çevrimdışı destek).
-const CACHE = "eviko-v18";
+const CACHE = "eviko-v19";
 const SHELL = [
   "/",
   "/index.html",
