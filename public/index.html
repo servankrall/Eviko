@@ -157,6 +157,21 @@
         </div>
       </section>
 
+      <!-- Hata ekranı (sakin, çözüm odaklı) -->
+      <section id="screen-error" class="screen hidden">
+        <div class="error-box">
+          <div class="error-emoji" id="error-emoji">😕</div>
+          <h2 id="error-title">Bir şeyler ters gitti</h2>
+          <p class="muted" id="error-text">Lütfen tekrar dene.</p>
+          <div class="error-actions">
+            <button id="error-retry" class="btn btn-primary">🔁 Tekrar dene</button>
+            <button id="error-cached" class="btn btn-ghost hidden">📋 Son sonucu göster</button>
+            <button id="error-key" class="btn btn-ghost hidden">⚙️ Ücretsiz anahtar ekle</button>
+            <button id="error-home" class="btn btn-ghost small">‹ Ana sayfa</button>
+          </div>
+        </div>
+      </section>
+
       <!-- 3) Sonuçlar (malzeme modu) -->
       <section id="screen-results" class="screen hidden">
         <div class="results-head">

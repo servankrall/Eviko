@@ -307,6 +307,31 @@ h2 {
   margin-top: 8px;
 }
 
+/* ---------- Hata ekranı ---------- */
+.error-box {
+  text-align: center;
+  padding: 48px 20px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.error-emoji {
+  font-size: 3.4rem;
+  margin-bottom: 8px;
+}
+.error-box h2 {
+  margin: 6px 0 8px;
+  font-size: 1.3rem;
+}
+.error-box p {
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+.error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* ---------- Sonuçlar ---------- */
 .results-head {
   display: flex;
