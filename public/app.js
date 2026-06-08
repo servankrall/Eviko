@@ -10,6 +10,7 @@ const screens = {
   shopping: el("screen-shopping"),
   history: el("screen-history"),
   plan: el("screen-plan"),
+  diary: el("screen-diary"),
 };
 
 // ---- Durum ----
@@ -46,6 +47,11 @@ let currentUser = null;
 let googleClientId = null;
 let pantry = store.get("eviko_pantry", []);
 let installPrompt = null;
+let diary = store.get("eviko_diary", []);
+let calGoal = Number(localStorage.getItem("eviko_cal_goal")) || 2000;
+let notes = store.get("eviko_notes", {});
+let recipeFilter = "all";
+let recipeSortTime = false;
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -452,12 +458,54 @@ function renderResults(data) {
     missingBar.classList.add("hidden");
   }
 
+  recipeFilter = "all";
+  recipeSortTime = false;
+  renderRecipeControls();
+  renderRecipeCards();
+}
+
+function renderRecipeControls() {
+  const wrap = el("recipe-controls");
+  const cats = [...new Set(lastRecipes.map((r) => r.category).filter(Boolean))];
+  if (lastRecipes.length < 2) {
+    wrap.innerHTML = "";
+    return;
+  }
+  const chip = (val, label) =>
+    `<button class="filter-chip ${recipeFilter === val ? "active" : ""}" data-cat="${escapeHtml(
+      val
+    )}">${escapeHtml(label)}</button>`;
+  wrap.innerHTML =
+    chip("all", "Tümü") +
+    cats.map((c) => chip(c, c)).join("") +
+    `<button class="filter-chip sort ${recipeSortTime ? "active" : ""}" id="sort-time">⏱ Süreye göre</button>`;
+  wrap.querySelectorAll("[data-cat]").forEach((b) =>
+    b.addEventListener("click", () => {
+      recipeFilter = b.dataset.cat;
+      renderRecipeControls();
+      renderRecipeCards();
+    })
+  );
+  const st = el("sort-time");
+  if (st)
+    st.addEventListener("click", () => {
+      recipeSortTime = !recipeSortTime;
+      renderRecipeControls();
+      renderRecipeCards();
+    });
+}
+
+function renderRecipeCards() {
+  let list = lastRecipes.slice();
+  if (recipeFilter !== "all") list = list.filter((r) => r.category === recipeFilter);
+  if (recipeSortTime)
+    list = list.sort((a, b) => (a.durationMinutes || 999) - (b.durationMinutes || 999));
   const grid = el("recipes");
-  grid.innerHTML = recipes
-    .map((r, i) => {
+  grid.innerHTML = list
+    .map((r) => {
       const fav = isFavorite(r.title) ? '<span class="fav-star">⭐</span>' : "";
       return `
-      <button class="recipe-card" data-index="${i}">
+      <button class="recipe-card" data-title="${escapeHtml(r.title)}">
         ${fav}
         <h3>${escapeHtml(r.title)}</h3>
         <p class="desc">${escapeHtml(r.description || "")}</p>
@@ -469,9 +517,8 @@ function renderResults(data) {
       </button>`;
     })
     .join("");
-
   grid.querySelectorAll(".recipe-card").forEach((card) => {
-    card.addEventListener("click", () => openRecipeByTitle(recipes[Number(card.dataset.index)].title));
+    card.addEventListener("click", () => openRecipeByTitle(card.dataset.title));
   });
 }
 
@@ -505,7 +552,9 @@ function renderCalories(data) {
       </div>
       ${comps ? `<h4 class="muted small">Bileşenler</h4><ul class="comp-list">${comps}</ul>` : ""}
       ${data.healthNote ? `<div class="cal-note">💡 ${escapeHtml(data.healthNote)}</div>` : ""}
+      <button id="cal-add" class="btn btn-primary cal-add">📒 Güne ekle</button>
     </div>`;
+  el("cal-add").onclick = () => addToDiary(data.dishName, data.totalCalories);
 }
 
 // ---- Tarif detayı (modal) ----
@@ -623,6 +672,7 @@ function renderRecipeDetail() {
         <button class="btn btn-ghost" id="btn-speak">🔊 Sesli oku</button>
         <button class="btn btn-ghost" id="btn-share">📤 Paylaş</button>
         <button class="btn btn-ghost" id="btn-video">▶️ Video</button>
+        ${r.caloriesPerServing ? '<button class="btn btn-ghost" id="btn-diary-add">📒 Güne ekle</button>' : ""}
         <button class="btn btn-primary" id="btn-cook">👨‍🍳 Pişir</button>
       </div>
 
@@ -641,6 +691,10 @@ function renderRecipeDetail() {
           ? `<div class="detail-section"><div class="tips"><strong>İpuçları</strong><ul>${tips}</ul></div></div>`
           : ""
       }
+      <div class="detail-section">
+        <h4>📝 Notum</h4>
+        <textarea id="recipe-note" class="note-area" placeholder="Bu tarif için kişisel notun…"></textarea>
+      </div>
       <div id="recipe-social" class="detail-section">${socialHtml(r)}</div>
     </div>`;
 
@@ -663,6 +717,16 @@ function renderRecipeDetail() {
       "_blank"
     );
   el("btn-cook").onclick = () => openCook(r);
+  const da = el("btn-diary-add");
+  if (da) da.onclick = () => addToDiary(r.title, r.caloriesPerServing);
+  const note = el("recipe-note");
+  if (note) {
+    note.value = notes[r.title] || "";
+    note.addEventListener("input", () => {
+      notes[r.title] = note.value;
+      store.set("eviko_notes", notes);
+    });
+  }
   modal.querySelectorAll(".step-list li").forEach((li) =>
     li.addEventListener("click", () => li.classList.toggle("done"))
   );
@@ -1484,6 +1548,75 @@ cookModal.addEventListener("click", (e) => {
     }
   });
 })();
+
+// ---- "Bugün ne pişeyim?" sürpriz ----
+const DISHES = [
+  "Menemen", "Mercimek çorbası", "Karnıyarık", "İmam bayıldı", "Tavuk sote", "Köfte",
+  "Mantı", "Kuru fasulye", "Pilav", "Sigara böreği", "Zeytinyağlı taze fasulye",
+  "Ispanaklı börek", "Domates çorbası", "Çoban salata", "Tavuklu pilav", "Patlıcan musakka",
+  "Etli nohut", "Bulgur pilavı", "Sebzeli omlet", "Fırın tavuk", "Makarna", "Şakşuka",
+  "Türlü", "Yeşil mercimek yemeği", "Kısır", "Mücver", "Pırasa yemeği", "Yoğurtlu kabak",
+];
+el("btn-surprise-dish").addEventListener("click", () => {
+  detectedNames = [];
+  openRecipeByTitle(DISHES[Math.floor(Math.random() * DISHES.length)]);
+});
+
+// ---- Beslenme günlüğü (Bugün) ----
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+function addToDiary(name, kcal) {
+  const k = Math.round(Number(kcal) || 0);
+  diary.push({ name: String(name).slice(0, 80), kcal: k, day: todayKey(), ts: Date.now() });
+  diary = diary.slice(-300);
+  store.set("eviko_diary", diary);
+  toast(`Güne eklendi: ${name} (${k} kcal)`);
+}
+function renderDiary() {
+  const items = diary.filter((e) => e.day === todayKey());
+  const sum = items.reduce((s, e) => s + (e.kcal || 0), 0);
+  el("diary-sum").textContent = sum;
+  el("diary-goal-label").textContent = calGoal;
+  el("diary-goal-input").value = calGoal;
+  const fill = el("diary-bar-fill");
+  fill.style.width = (calGoal > 0 ? Math.min(100, Math.round((sum / calGoal) * 100)) : 0) + "%";
+  fill.style.background = sum > calGoal ? "var(--tomato)" : "var(--green)";
+  el("btn-clear-diary").classList.toggle("hidden", items.length === 0);
+  const list = el("diary-list");
+  list.innerHTML = items.length
+    ? items
+        .map(
+          (e) =>
+            `<li class="shop-item"><span class="name">${escapeHtml(e.name)}</span><span class="ccal">${e.kcal} kcal</span><button class="remove" data-ts="${e.ts}" aria-label="Sil">×</button></li>`
+        )
+        .join("")
+    : '<div class="list-empty">Bugün henüz bir şey eklemedin.</div>';
+  list.querySelectorAll("[data-ts]").forEach((b) =>
+    b.addEventListener("click", () => {
+      diary = diary.filter((e) => String(e.ts) !== b.dataset.ts);
+      store.set("eviko_diary", diary);
+      renderDiary();
+    })
+  );
+}
+el("btn-diary").addEventListener("click", () => {
+  renderDiary();
+  showScreen("diary");
+});
+el("diary-goal-input").addEventListener("change", () => {
+  calGoal = Math.max(0, Number(el("diary-goal-input").value) || 0);
+  localStorage.setItem("eviko_cal_goal", String(calGoal));
+  renderDiary();
+});
+el("btn-clear-diary").addEventListener("click", () => {
+  if (confirm("Bugünün günlüğü temizlensin mi?")) {
+    diary = diary.filter((e) => e.day !== todayKey());
+    store.set("eviko_diary", diary);
+    renderDiary();
+  }
+});
 
 // ---- Yardımcılar ----
 function formatQty(n) {

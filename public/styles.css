@@ -1403,6 +1403,116 @@ h2 {
   flex: 1;
 }
 
+/* ---------- Araçlar + filtre + günlük + not ---------- */
+.tools-row {
+  display: flex;
+  gap: 8px;
+  max-width: 460px;
+  margin: 12px auto 0;
+}
+.tools-row .btn {
+  flex: 1;
+}
+.recipe-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+.filter-chip {
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.filter-chip.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.filter-chip.sort.active {
+  background: var(--tomato);
+  border-color: var(--tomato);
+}
+.note-area {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: #fff;
+  resize: vertical;
+  min-height: 54px;
+}
+.cal-add {
+  width: 100%;
+  margin-top: 14px;
+}
+.diary-goal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.diary-goal input {
+  width: 110px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+  text-align: right;
+}
+.diary-total {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+.diary-bar {
+  height: 10px;
+  background: var(--green-soft);
+  border-radius: 999px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.diary-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--green);
+  border-radius: 999px;
+  transition: width 0.3s;
+}
+.diary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.diary-list .ccal {
+  color: var(--muted);
+  font-weight: 600;
+  margin-right: 8px;
+}
+[data-theme="dark"] .filter-chip,
+[data-theme="dark"] .note-area,
+[data-theme="dark"] .diary-goal input {
+  background: #1d2226;
+  color: var(--ink);
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
