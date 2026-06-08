@@ -45,7 +45,10 @@ function prefText(preferences) {
 }
 
 function langText(language) {
-  return language === "en" ? " IMPORTANT: Respond ENTIRELY in English." : "";
+  if (language === "en") return " IMPORTANT: Respond ENTIRELY in English.";
+  if (language === "de") return " WICHTIG: Antworte vollständig auf Deutsch.";
+  if (language === "ar") return " مهم: أجب بالكامل باللغة العربية.";
+  return "";
 }
 
 const ANALYZE_SCHEMA = {

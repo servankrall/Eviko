@@ -144,9 +144,11 @@
     return localStorage.getItem("eviko_lang") || "tr";
   }
   function langLine() {
-    return langOf() === "en"
-      ? "\nIMPORTANT: Respond ENTIRELY in English (all text values in the JSON)."
-      : "";
+    const l = langOf();
+    if (l === "en") return "\nIMPORTANT: Respond ENTIRELY in English (all text values in the JSON).";
+    if (l === "de") return "\nWICHTIG: Antworte vollständig auf Deutsch (alle Textwerte im JSON).";
+    if (l === "ar") return "\nمهم: أجب بالكامل باللغة العربية (جميع القيم النصية في JSON).";
+    return "";
   }
   function favLine() {
     try {

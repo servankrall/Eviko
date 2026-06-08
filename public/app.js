@@ -88,6 +88,7 @@ function init() {
   registerServiceWorker();
   applyTheme();
   applyAccent();
+  applyDir();
   initPrefs();
   renderAvoid();
   setMode(mode);
@@ -115,6 +116,10 @@ function applyTheme() {
 }
 function applyAccent() {
   document.documentElement.dataset.accent = accent;
+}
+function applyDir() {
+  // Arapça için sağdan-sola yazım yönü.
+  document.documentElement.dir = (localStorage.getItem("eviko_lang") || "tr") === "ar" ? "rtl" : "ltr";
 }
 function markAccent() {
   document.querySelectorAll(".accent-dot").forEach((d) =>
@@ -1163,6 +1168,7 @@ el("settings-save").addEventListener("click", () => {
   localStorage.setItem("eviko_theme", el("theme-select").value);
   localStorage.setItem("eviko_lang", el("lang-select").value);
   applyTheme();
+  applyDir();
   settingsModal.classList.add("hidden");
   checkHealth();
   toast("Ayarlar kaydedildi ✓");
@@ -1179,6 +1185,7 @@ el("settings-clear").addEventListener("click", () => {
   localStorage.removeItem("eviko_lang");
   el("lang-select").value = "tr";
   applyTheme();
+  applyDir();
   checkHealth();
   toast("Ayarlar temizlendi");
 });
