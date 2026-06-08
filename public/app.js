@@ -61,6 +61,7 @@ let lastAction = null; // hata sonrası "tekrar dene" için
 let lastFailType = null; // "results" | "calories" | "plan"
 let lastResultsData = store.get("eviko_last_results", null);
 let lastCaloriesData = store.get("eviko_last_calories", null);
+let myRecipes = store.get("eviko_my_recipes", []);
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -788,7 +789,7 @@ function renderRecipeDetail() {
       let amount;
       if (ing.toTaste) amount = "damak zevkine göre";
       else if (ing.quantity > 0) amount = `${formatQty(ing.quantity * factor)} ${ing.unit || ""}`.trim();
-      else amount = ing.unit || "—";
+      else amount = ing.unit || "";
       return `<li class="tappable" data-item="${escapeHtml(ing.item)}"><span>${escapeHtml(
         ing.item
       )}<span class="item-shop">🛒</span></span><span class="amount">${escapeHtml(amount)}</span></li>`;
@@ -972,6 +973,81 @@ el("fav-search").addEventListener("input", (e) => {
   renderFavorites();
 });
 
+// ---- Kendi tariflerim ----
+const myrecModal = el("myrecipes-modal");
+el("btn-myrecipes").addEventListener("click", () => {
+  renderMyRecipes();
+  el("myrec-form").classList.add("hidden");
+  myrecModal.classList.remove("hidden");
+});
+el("myrec-close").addEventListener("click", () => myrecModal.classList.add("hidden"));
+myrecModal.addEventListener("click", (e) => {
+  if (e.target === myrecModal) myrecModal.classList.add("hidden");
+});
+el("myrec-new").addEventListener("click", () => {
+  el("myrec-title").value = "";
+  el("myrec-ing").value = "";
+  el("myrec-steps").value = "";
+  el("myrec-form").classList.remove("hidden");
+  el("myrec-title").focus();
+});
+el("myrec-cancel").addEventListener("click", () => el("myrec-form").classList.add("hidden"));
+el("myrec-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const title = el("myrec-title").value.trim();
+  if (!title) {
+    toast("Tarife bir ad ver.");
+    return;
+  }
+  const ingredients = el("myrec-ing")
+    .value.split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => ({ item: line, quantity: 0, unit: "", toTaste: false }));
+  const steps = el("myrec-steps")
+    .value.split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  myRecipes.unshift({ title, servings: 2, ingredients, steps, tips: [], mine: true });
+  myRecipes = myRecipes.slice(0, 200);
+  store.set("eviko_my_recipes", myRecipes);
+  el("myrec-form").classList.add("hidden");
+  renderMyRecipes();
+  toast("Tarifin kaydedildi ✍️");
+});
+function renderMyRecipes() {
+  const box = el("myrec-list");
+  if (!myRecipes.length) {
+    box.innerHTML =
+      '<div class="list-empty">Henüz kendi tarifin yok.<br>"➕ Yeni tarif ekle" ile başla.</div>';
+    return;
+  }
+  box.innerHTML = myRecipes
+    .map(
+      (r, i) =>
+        `<div class="fav-item"><div class="fav-main" data-open="${i}"><h3>${escapeHtml(
+          r.title
+        )}</h3><div class="muted small">${(r.ingredients || []).length} malzeme · ${
+          (r.steps || []).length
+        } adım</div></div><button class="remove" data-del="${i}" aria-label="Sil">🗑️</button></div>`
+    )
+    .join("");
+  box.querySelectorAll("[data-open]").forEach((m) =>
+    m.addEventListener("click", () => {
+      myrecModal.classList.add("hidden");
+      detectedNames = [];
+      openRecipeObject(myRecipes[Number(m.dataset.open)]);
+    })
+  );
+  box.querySelectorAll("[data-del]").forEach((b) =>
+    b.addEventListener("click", () => {
+      myRecipes.splice(Number(b.dataset.del), 1);
+      store.set("eviko_my_recipes", myRecipes);
+      renderMyRecipes();
+    })
+  );
+}
+
 // ---- Alışveriş listesi ----
 function addToShopping(names) {
   const existing = new Set(shopping.map((s) => s.name.toLocaleLowerCase("tr")));
@@ -1109,8 +1185,8 @@ el("settings-clear").addEventListener("click", () => {
 
 // ---- Veri yedekleme / geri yükleme (cihazda) ----
 const BACKUP_KEYS = [
-  "eviko_favorites", "eviko_shopping", "eviko_prefs", "eviko_avoid",
-  "eviko_history", "eviko_pantry", "eviko_diary", "eviko_notes",
+  "eviko_favorites", "eviko_my_recipes", "eviko_shopping", "eviko_prefs",
+  "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_diary", "eviko_notes",
   "eviko_water", "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
 ];
 el("btn-backup").addEventListener("click", () => {
