@@ -394,6 +394,27 @@ app.post("/api/recipes/comment", requireAuth, (req, res) => {
   res.json({ ok: true, comments: db.listComments(slug), rating: db.recipeRating(db.getRecipe(slug)) });
 });
 
+// ---------------------------------------------------------------------------
+// Ev/aile grupları — kod ile paylaşılan alışveriş listesi
+// ---------------------------------------------------------------------------
+function householdView(h) {
+  return { code: h.code, items: h.items || [], updatedAt: h.updatedAt };
+}
+app.post("/api/household/create", (_req, res) => {
+  const h = db.createHousehold();
+  res.json(householdView(h));
+});
+app.get("/api/household/:code", (req, res) => {
+  const h = db.getHousehold(req.params.code);
+  if (!h) return res.status(404).json({ error: "Ev grubu bulunamadı." });
+  res.json(householdView(h));
+});
+app.put("/api/household/:code", (req, res) => {
+  const h = db.setHouseholdList(req.params.code, (req.body && req.body.items) || []);
+  if (!h) return res.status(404).json({ error: "Ev grubu bulunamadı." });
+  res.json(householdView(h));
+});
+
 db.init()
   .catch((e) => console.error("DB init hatası:", e.message))
   .finally(() => {

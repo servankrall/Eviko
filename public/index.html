@@ -251,6 +251,7 @@
         </form>
         <ul id="shopping-list" class="shopping-list"></ul>
         <div class="diary-foot">
+          <button id="btn-household" class="btn btn-ghost small">👨‍👩‍👧 Ev grubu</button>
           <button id="btn-market" class="btn btn-ghost small hidden">🛒 Markete götür</button>
           <button id="btn-clear-shop" class="btn btn-ghost small hidden">Tümünü temizle</button>
         </div>
@@ -531,6 +532,34 @@
         <button id="coach-close" class="modal-close" aria-label="Kapat">×</button>
         <h2>🧑‍🏫 Haftalık koçluk</h2>
         <div id="coach-body" class="coach-body"></div>
+      </div>
+    </div>
+
+    <!-- Ev/aile ortak listesi -->
+    <div id="household-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="hh-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>👨‍👩‍👧 Ev grubu</h2>
+        <p class="muted small">Alışveriş listesini ev halkıyla bir <b>ev kodu</b> üzerinden paylaş. Aynı kodu girenler listeyi gönderip getirebilir.</p>
+        <div id="hh-join">
+          <button id="hh-create" class="btn btn-primary">➕ Yeni ev grubu oluştur</button>
+          <div class="manual-sep"><span>veya</span></div>
+          <form id="hh-join-form" class="event-form">
+            <input id="hh-code-input" type="text" placeholder="Ev kodu (ör. ABC234)" autocomplete="off" maxlength="6" />
+            <button class="btn btn-ghost" type="submit">Katıl</button>
+          </form>
+        </div>
+        <div id="hh-active" class="hidden">
+          <p>Ev kodun: <b id="hh-code" class="hh-code"></b>
+            <button id="hh-copy" class="btn btn-ghost small">📋 Kopyala</button>
+          </p>
+          <div class="hh-actions">
+            <button id="hh-push" class="btn btn-ghost">⬆️ Listemi gönder</button>
+            <button id="hh-pull" class="btn btn-ghost">⬇️ Grubun listesini getir</button>
+          </div>
+          <p id="hh-status" class="muted small"></p>
+          <button id="hh-leave" class="btn btn-ghost small">Gruptan çık</button>
+        </div>
       </div>
     </div>
 

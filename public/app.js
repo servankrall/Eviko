@@ -62,6 +62,7 @@ let lastFailType = null; // "results" | "calories" | "plan"
 let lastResultsData = store.get("eviko_last_results", null);
 let lastCaloriesData = store.get("eviko_last_calories", null);
 let myRecipes = store.get("eviko_my_recipes", []);
+let household = localStorage.getItem("eviko_household") || null;
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -490,6 +491,26 @@ async function serverPost(path, body) {
   if (!ct.includes("application/json")) {
     throw new Error("Sunucu bulunamadı. ⚙️ Ayarlar'dan ücretsiz Gemini API anahtarını ekleyin.");
   }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "İşlem başarısız");
+  return data;
+}
+
+// GET/PUT/POST genel JSON isteği (ev grubu gibi sunucu özellikleri için).
+async function serverJson(path, method = "GET", body) {
+  let res;
+  try {
+    res = await fetch(api(path), {
+      method,
+      credentials: "include",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new Error("Sunucuya ulaşılamadı.");
+  }
+  const ct = res.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) throw new Error("Sunucu bulunamadı.");
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "İşlem başarısız");
   return data;
@@ -1417,6 +1438,90 @@ el("market-copy").addEventListener("click", async () => {
     toast("Kopyalanamadı.");
   }
   marketModal.classList.add("hidden");
+});
+
+// ---- Ev/aile ortak listesi (kod ile paylaşım) ----
+const hhModal = el("household-modal");
+function renderHousehold() {
+  const joined = !!household;
+  el("hh-join").classList.toggle("hidden", joined);
+  el("hh-active").classList.toggle("hidden", !joined);
+  el("hh-status").textContent = "";
+  if (joined) el("hh-code").textContent = household;
+}
+el("btn-household").addEventListener("click", () => {
+  renderHousehold();
+  hhModal.classList.remove("hidden");
+});
+el("hh-close").addEventListener("click", () => hhModal.classList.add("hidden"));
+hhModal.addEventListener("click", (e) => {
+  if (e.target === hhModal) hhModal.classList.add("hidden");
+});
+el("hh-create").addEventListener("click", async () => {
+  try {
+    const h = await serverJson("/api/household/create", "POST", {});
+    household = h.code;
+    localStorage.setItem("eviko_household", household);
+    renderHousehold();
+    toast("Ev grubu oluşturuldu 👨‍👩‍👧");
+  } catch (err) {
+    toast(err.message || "Oluşturulamadı.");
+  }
+});
+el("hh-join-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const code = el("hh-code-input").value.trim().toUpperCase();
+  if (!code) return;
+  try {
+    const h = await serverJson("/api/household/" + encodeURIComponent(code), "GET");
+    household = h.code;
+    localStorage.setItem("eviko_household", household);
+    el("hh-code-input").value = "";
+    renderHousehold();
+    toast("Gruba katıldın 👨‍👩‍👧");
+  } catch (err) {
+    toast(err.message || "Grup bulunamadı.");
+  }
+});
+el("hh-copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(household || "");
+    toast("Kod kopyalandı 📋");
+  } catch {
+    toast("Kopyalanamadı.");
+  }
+});
+el("hh-push").addEventListener("click", async () => {
+  if (!household) return;
+  el("hh-status").textContent = "Gönderiliyor…";
+  try {
+    await serverJson("/api/household/" + household, "PUT", {
+      items: shopping.map((s) => ({ name: s.name, checked: !!s.checked })),
+    });
+    el("hh-status").textContent = "Listen gruba gönderildi ✓";
+  } catch (err) {
+    el("hh-status").textContent = err.message || "Gönderilemedi.";
+  }
+});
+el("hh-pull").addEventListener("click", async () => {
+  if (!household) return;
+  el("hh-status").textContent = "Getiriliyor…";
+  try {
+    const h = await serverJson("/api/household/" + household, "GET");
+    shopping = (h.items || []).map((it) => ({ name: it.name, checked: !!it.checked }));
+    store.set("eviko_shopping", shopping);
+    renderShopping();
+    updateBadges();
+    el("hh-status").textContent = "Grubun listesi alındı ✓";
+  } catch (err) {
+    el("hh-status").textContent = err.message || "Getirilemedi.";
+  }
+});
+el("hh-leave").addEventListener("click", () => {
+  household = null;
+  localStorage.removeItem("eviko_household");
+  renderHousehold();
+  toast("Gruptan çıkıldı.");
 });
 
 // ---- Tarif sosyal verisi (fotoğraf + yorum + puan) ----
