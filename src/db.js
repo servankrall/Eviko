@@ -11,7 +11,7 @@ const DATA_DIR = process.env.EVIKO_DATA_DIR || path.join(__dirname, "..", "data"
 const DB_FILE = path.join(DATA_DIR, "eviko.json");
 
 function emptyDb() {
-  return { users: [], sessions: {}, recipes: {}, comments: [], events: [] };
+  return { users: [], sessions: {}, recipes: {}, comments: [], events: [], households: {} };
 }
 
 let db = emptyDb();
@@ -242,4 +242,40 @@ export function recommended(limit = 10) {
     .sort((a, b) => recipeRating(b) - recipeRating(a) || (b.views || 0) - (a.views || 0))
     .slice(0, limit)
     .map(recipeCard);
+}
+
+// ---- Ev/aile grupları (kod ile paylaşılan alışveriş listesi) ----
+function normItems(items) {
+  return (Array.isArray(items) ? items : [])
+    .slice(0, 200)
+    .map((it) => ({
+      name: String((it && it.name) || it || "").slice(0, 80),
+      checked: !!(it && it.checked),
+    }))
+    .filter((it) => it.name);
+}
+export function createHousehold() {
+  if (!db.households) db.households = {};
+  let code;
+  do {
+    // Okunması kolay 6 haneli kod (karışan harf/rakamlar elendi).
+    code = Array.from({ length: 6 }, () =>
+      "ABCDEFGHJKLMNPRSTUVYZ234789".charAt(Math.floor(Math.random() * 27))
+    ).join("");
+  } while (db.households[code]);
+  db.households[code] = { code, items: [], createdAt: Date.now(), updatedAt: Date.now() };
+  save();
+  return db.households[code];
+}
+export function getHousehold(code) {
+  if (!db.households) return null;
+  return db.households[String(code || "").toUpperCase()] || null;
+}
+export function setHouseholdList(code, items) {
+  const h = getHousehold(code);
+  if (!h) return null;
+  h.items = normItems(items);
+  h.updatedAt = Date.now();
+  save();
+  return h;
 }

@@ -2034,6 +2034,28 @@ h2 {
   margin-top: 14px;
 }
 
+/* ---------- Ev grubu ---------- */
+#hh-create {
+  width: 100%;
+}
+.hh-code {
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  padding: 2px 10px;
+  border-radius: 8px;
+}
+.hh-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.hh-actions .btn {
+  flex: 1;
+}
+
 /* ---------- Sağdan-sola (Arapça) ---------- */
 [dir="rtl"] .modal-close {
   right: auto;
