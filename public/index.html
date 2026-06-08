@@ -112,6 +112,11 @@
 
         <button id="btn-plan" class="btn btn-ghost plan-btn">📅 Haftalık yemek planı</button>
 
+        <div class="tools-row">
+          <button id="btn-surprise-dish" class="btn btn-ghost">🎲 Bugün ne pişeyim?</button>
+          <button id="btn-diary" class="btn btn-ghost">📒 Günlük</button>
+        </div>
+
         <div id="pantry-box" class="pantry-box">
           <h2>🧊 Buzdolabım</h2>
           <p class="muted small">Sık kullandığın malzemeleri kaydet; tek dokunuşla onlardan yemek öner.</p>
@@ -170,6 +175,7 @@
           </div>
           <button id="btn-surprise" class="btn btn-ghost small">🎲 Sürpriz</button>
         </div>
+        <div id="recipe-controls" class="recipe-controls"></div>
         <div id="recipes" class="recipe-grid"></div>
       </section>
 
@@ -228,6 +234,24 @@
         <p class="muted small">Bir güne dokun, tarifini aç.</p>
         <div id="plan-list" class="plan-list"></div>
         <button id="btn-share-plan" class="btn btn-ghost small hidden">📤 Planı paylaş</button>
+      </section>
+
+      <!-- 9) Beslenme günlüğü -->
+      <section id="screen-diary" class="screen hidden">
+        <div class="results-head">
+          <button class="btn btn-ghost small" data-back>‹ Geri</button>
+          <h2>📒 Bugün</h2>
+        </div>
+        <div class="diary-goal">
+          <span>Günlük hedef (kcal)</span>
+          <input id="diary-goal-input" type="number" min="0" step="50" />
+        </div>
+        <div class="diary-total">
+          <div><span id="diary-sum">0</span> / <span id="diary-goal-label">2000</span> kcal</div>
+          <div class="diary-bar"><div id="diary-bar-fill" class="diary-bar-fill"></div></div>
+        </div>
+        <ul id="diary-list" class="diary-list"></ul>
+        <button id="btn-clear-diary" class="btn btn-ghost small hidden">Günü temizle</button>
       </section>
     </main>
 
