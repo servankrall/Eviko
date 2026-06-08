@@ -1676,6 +1676,32 @@ h2 {
   }
 }
 
+/* ---------- Favori arama ---------- */
+.fav-search {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 1rem;
+  margin-bottom: 14px;
+}
+.fav-search:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+/* ---------- Veri yedekleme ---------- */
+.backup-actions {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 2px;
+}
+.backup-actions .btn {
+  flex: 1;
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;

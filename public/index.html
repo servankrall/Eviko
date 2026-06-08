@@ -199,6 +199,13 @@
           <button class="btn btn-ghost small" data-back>‹ Geri</button>
           <h2>⭐ Favori tariflerim</h2>
         </div>
+        <input
+          id="fav-search"
+          class="fav-search hidden"
+          type="search"
+          placeholder="🔎 Favorilerde ara…"
+          autocomplete="off"
+        />
         <div id="favorites-list"></div>
       </section>
 
@@ -333,6 +340,14 @@
           <button type="button" class="accent-dot" data-accent="tomato" style="background:#e8590c" aria-label="Turuncu"></button>
           <button type="button" class="accent-dot" data-accent="blue" style="background:#1c7ed6" aria-label="Mavi"></button>
           <button type="button" class="accent-dot" data-accent="purple" style="background:#7048e8" aria-label="Mor"></button>
+        </div>
+
+        <label class="field-label">Verilerim (yedek)</label>
+        <p class="muted small">Favori, günlük, alışveriş ve diğer verilerini bir dosyaya kaydet; başka cihazda geri yükle.</p>
+        <div class="backup-actions">
+          <button type="button" id="btn-backup" class="btn btn-ghost">💾 Yedekle</button>
+          <button type="button" id="btn-restore" class="btn btn-ghost">📥 Geri yükle</button>
+          <input id="restore-input" type="file" accept="application/json,.json" hidden />
         </div>
 
         <div class="settings-actions">
