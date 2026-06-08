@@ -1973,6 +1973,25 @@ h2 {
   line-height: 1.6;
 }
 
+/* ---------- Koçluk + günlük alt çubuk ---------- */
+.coach-body {
+  margin-top: 10px;
+  line-height: 1.6;
+}
+.coach-tips {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+.coach-tips li {
+  margin-bottom: 6px;
+}
+.diary-foot {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;

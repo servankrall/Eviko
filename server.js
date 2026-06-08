@@ -12,6 +12,7 @@ import {
   demoSubstitute,
   demoEventPlan,
   demoReceipt,
+  demoCoach,
 } from "./src/demo.js";
 import * as db from "./src/db.js";
 import {
@@ -243,6 +244,40 @@ app.post("/api/receipt", async (req, res) => {
   } catch (err) {
     console.error("Fiş okuma hatası:", err);
     res.status(500).json({ error: "Fiş okunamadı. Daha net bir fotoğraf deneyin." });
+  }
+});
+
+// Sesli/serbest istek → yemek önerileri
+app.post("/api/suggest", async (req, res) => {
+  try {
+    const { query, preferences, language } = req.body || {};
+    if (!query) return res.status(400).json({ error: "query gerekli." });
+    if (DEMO) return res.json({ ...demoAnalyze(), demo: true });
+    const result = await provider.impl.suggest({
+      query: String(query),
+      preferences: Array.isArray(preferences) ? preferences : [],
+      language: language || "tr",
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("Öneri hatası:", err);
+    res.status(500).json({ error: "Öneri alınamadı. Lütfen tekrar deneyin." });
+  }
+});
+
+// Haftalık beslenme koçluğu
+app.post("/api/coach", async (req, res) => {
+  try {
+    const { summary, language } = req.body || {};
+    if (DEMO) return res.json({ ...demoCoach(), demo: true });
+    const result = await provider.impl.coach({
+      summary: String(summary || ""),
+      language: language || "tr",
+    });
+    res.json({ ...result, demo: false });
+  } catch (err) {
+    console.error("Koçluk hatası:", err);
+    res.status(500).json({ error: "Koçluk özeti alınamadı." });
   }
 });
 

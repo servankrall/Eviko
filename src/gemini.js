@@ -230,3 +230,30 @@ export async function readReceipt({ imageBase64, mediaType, language = "tr" }) {
     1024
   );
 }
+
+// 8) Sesli/serbest istek → yemek önerileri (asistan)
+export async function suggest({ query, preferences = [], language = "tr" }) {
+  const prompt =
+    `Kullanıcının isteği: "${query}". Bu isteğe uygun 6-8 farklı pratik yemek öner (tuz, yağ, ` +
+    "soğan, sarımsak, un, yumurta, baharat evde var sayılır). İstekteki kişi sayısı, öğün, " +
+    "hafiflik/doyuruculuk gibi ipuçlarını dikkate al. 'detected' boş olabilir." +
+    prefText(preferences) +
+    ANALYZE_SHAPE +
+    langText(language);
+  return callGemini([{ text: prompt }]);
+}
+
+// 9) Haftalık beslenme koçluğu
+const COACH_SHAPE = `
+Yanıtı SADECE şu JSON ile ver: {"message":"...","tips":["...","..."]}`;
+
+export async function coach({ summary, language = "tr" }) {
+  const prompt =
+    "Bir beslenme koçu gibisin (doktor değilsin). Aşağıdaki yeme özetine göre kısa, samimi, " +
+    "yargılamayan bir değerlendirme ('message') ve 2-4 uygulanabilir öneri ('tips') ver. Tıbbi " +
+    "iddia veya teşhis yapma.\n\nÖzet:\n" +
+    summary +
+    COACH_SHAPE +
+    langText(language);
+  return callGemini([{ text: prompt }], 1024);
+}

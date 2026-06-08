@@ -116,6 +116,7 @@
 
         <div class="tools-row">
           <button id="btn-surprise-dish" class="btn btn-ghost">🎡 Ne yesem?</button>
+          <button id="btn-assistant" class="btn btn-ghost">🎙️ Sesli asistan</button>
           <button id="btn-diary" class="btn btn-ghost">📒 Günlük</button>
           <button id="btn-converter" class="btn btn-ghost">📐 Çevirici</button>
           <button id="btn-badges" class="btn btn-ghost">🏆 Rozetler</button>
@@ -308,7 +309,10 @@
           <button class="btn btn-ghost" type="submit">+ Ekle</button>
         </form>
         <ul id="diary-list" class="diary-list"></ul>
-        <button id="btn-clear-diary" class="btn btn-ghost small hidden">Günü temizle</button>
+        <div class="diary-foot">
+          <button id="btn-coach" class="btn btn-ghost small">🧑‍🏫 Haftalık koçluk</button>
+          <button id="btn-clear-diary" class="btn btn-ghost small hidden">Günü temizle</button>
+        </div>
         <div id="diary-week" class="diary-week"></div>
       </section>
     </main>
@@ -497,6 +501,29 @@
           <button class="btn btn-primary" type="submit">Hesapla</button>
         </form>
         <div id="event-result" class="event-result"></div>
+      </div>
+    </div>
+
+    <!-- Sesli asistan -->
+    <div id="assistant-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="assistant-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>🎙️ Sesli asistan</h2>
+        <p class="muted small">Ne istediğini yaz ya da söyle: "akşama 4 kişiye hafif bir şey", "pratik kahvaltılık".</p>
+        <form id="assistant-form" class="event-form">
+          <input id="assistant-input" type="text" placeholder="İsteğini yaz…" autocomplete="off" />
+          <button type="button" id="assistant-mic" class="mic-btn hidden" aria-label="Sesle sor">🎤</button>
+          <button class="btn btn-primary" type="submit">Sor</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Haftalık koçluk -->
+    <div id="coach-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="coach-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>🧑‍🏫 Haftalık koçluk</h2>
+        <div id="coach-body" class="coach-body"></div>
       </div>
     </div>
 

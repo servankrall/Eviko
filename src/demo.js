@@ -164,6 +164,18 @@ export function demoReceipt() {
   return { items: ["Süt", "Yumurta", "Ekmek", "Domates", "Beyaz peynir", "Salatalık"] };
 }
 
+export function demoCoach() {
+  return {
+    message:
+      "Son günlerde dengeli gidiyorsun! Biraz daha sebze ve su eklemek harika olur. (Demo modu)",
+    tips: [
+      "Günde en az 2 porsiyon sebze hedefle.",
+      "Akşamları daha hafif yemeyi dene.",
+      "Su takibini sürdür, günde 8 bardak iyi bir hedef.",
+    ],
+  };
+}
+
 export function demoCalories() {
   return {
     dishName: "Mercimek Çorbası (örnek)",
