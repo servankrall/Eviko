@@ -111,15 +111,32 @@ export function demoRecipe(title) {
 export function demoPlan() {
   const days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
   const meals = [
-    ["Menemen", "Pratik ve doyurucu"],
-    ["Sebze Türlüsü", "Mevsim sebzeleriyle"],
-    ["Mercimek Çorbası", "Yanında ekmekle"],
-    ["Fırında Patates", "Çıtır ve baharatlı"],
-    ["Çoban Salatası + Omlet", "Hafif bir akşam"],
-    ["Patlıcan Musakka", "Sofralık ana yemek"],
-    ["Domates Çorbası", "Sıcacık kapanış"],
+    ["Menemen", "Pratik ve doyurucu", ["Domates", "Biber", "Yumurta", "Soğan"]],
+    ["Sebze Türlüsü", "Mevsim sebzeleriyle", ["Patlıcan", "Kabak", "Patates", "Domates"]],
+    ["Mercimek Çorbası", "Yanında ekmekle", ["Kırmızı mercimek", "Soğan", "Havuç", "Un"]],
+    ["Fırında Patates", "Çıtır ve baharatlı", ["Patates", "Zeytinyağı", "Kekik"]],
+    ["Çoban Salatası + Omlet", "Hafif bir akşam", ["Domates", "Salatalık", "Biber", "Yumurta"]],
+    ["Patlıcan Musakka", "Sofralık ana yemek", ["Patlıcan", "Kıyma", "Domates", "Biber"]],
+    ["Domates Çorbası", "Sıcacık kapanış", ["Domates", "Un", "Tereyağı", "Süt"]],
   ];
-  return { days: days.map((d, i) => ({ day: d, title: meals[i][0], description: meals[i][1] })) };
+  return {
+    days: days.map((d, i) => ({
+      day: d,
+      title: meals[i][0],
+      description: meals[i][1],
+      ingredients: meals[i][2],
+    })),
+  };
+}
+
+export function demoSubstitute(item) {
+  return {
+    item: item || "malzeme",
+    alternatives: [
+      { name: "Benzer bir malzeme", note: "Demo modu: gerçek öneri için sunucuya API anahtarı ekleyin." },
+      { name: "Pratik alternatif", note: "Örnek not." },
+    ],
+  };
 }
 
 export function demoCalories() {

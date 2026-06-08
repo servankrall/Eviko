@@ -168,8 +168,8 @@ export async function analyzeCalories({ imageBase64, mediaType, language = "tr" 
 // 4) Haftalık yemek planı
 const PLAN_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
-{"days":[{"day":"Pazartesi","title":"yemek adı","description":"kısa açıklama"}]}
-Tam 7 gün ver (Pazartesi'den Pazar'a).`;
+{"days":[{"day":"Pazartesi","title":"yemek adı","description":"kısa açıklama","ingredients":["ana malzeme","..."]}]}
+Tam 7 gün ver (Pazartesi'den Pazar'a). Her gün için 4-6 ana malzemeyi "ingredients" olarak yaz.`;
 
 export async function planWeek({ preferences = [], detected = [], language = "tr" }) {
   const elde = detected.length
@@ -178,9 +178,21 @@ export async function planWeek({ preferences = [], detected = [], language = "tr
   const prompt =
     "Bir haftalık (7 gün) pratik akşam yemeği planı oluştur. " +
     elde +
-    "Çeşitli, dengeli ve ev yapımı yemekler seç." +
+    "Çeşitli, dengeli ve ev yapımı yemekler seç. Her gün için ana malzemeleri de listele." +
     prefText(preferences) +
     PLAN_SHAPE +
+    langText(language);
+  return callGemini([{ text: prompt }]);
+}
+
+const SUBSTITUTE_SHAPE = `
+Yanıtı SADECE şu JSON ile ver: {"item":"...","alternatives":[{"name":"alternatif","note":"kısa açıklama"}]}`;
+
+export async function substitute({ item, title = "", language = "tr" }) {
+  const prompt =
+    `"${title || "bu tarif"}" için "${item}" malzemesi yerine kullanılabilecek 3-4 pratik ` +
+    "alternatif öner; her biri için kısa not." +
+    SUBSTITUTE_SHAPE +
     langText(language);
   return callGemini([{ text: prompt }]);
 }

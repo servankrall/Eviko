@@ -115,6 +115,7 @@
         <div class="tools-row">
           <button id="btn-surprise-dish" class="btn btn-ghost">🎲 Bugün ne pişeyim?</button>
           <button id="btn-diary" class="btn btn-ghost">📒 Günlük</button>
+          <button id="btn-converter" class="btn btn-ghost">📐 Çevirici</button>
         </div>
 
         <div id="pantry-box" class="pantry-box">
@@ -233,7 +234,10 @@
         </div>
         <p class="muted small">Bir güne dokun, tarifini aç.</p>
         <div id="plan-list" class="plan-list"></div>
-        <button id="btn-share-plan" class="btn btn-ghost small hidden">📤 Planı paylaş</button>
+        <div class="plan-actions">
+          <button id="btn-plan-shop" class="btn btn-primary hidden">🛒 Haftanın alışveriş listesi</button>
+          <button id="btn-share-plan" class="btn btn-ghost small hidden">📤 Planı paylaş</button>
+        </div>
       </section>
 
       <!-- 9) Beslenme günlüğü -->
@@ -346,6 +350,50 @@
           <p id="auth-hello" class="muted"></p>
           <button id="auth-logout" class="btn btn-ghost auth-submit" type="button">Çıkış yap</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Malzeme ikamesi (yerine ne?) -->
+    <div id="ing-modal" class="modal hidden">
+      <div class="modal-card" role="dialog" aria-modal="true">
+        <button id="ing-close" class="modal-close" aria-label="Kapat">×</button>
+        <div id="ing-body"></div>
+      </div>
+    </div>
+
+    <!-- Ölçü çevirici -->
+    <div id="conv-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="conv-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>📐 Ölçü çevirici</h2>
+        <div class="conv-row">
+          <input id="conv-val" type="number" value="1" min="0" step="0.5" />
+          <select id="conv-unit">
+            <option value="200">su bardağı</option>
+            <option value="110">çay bardağı</option>
+            <option value="80">fincan</option>
+            <option value="15">yemek kaşığı</option>
+            <option value="8">tatlı kaşığı</option>
+            <option value="5">çay kaşığı</option>
+            <option value="1">mililitre (ml)</option>
+          </select>
+        </div>
+        <div id="conv-result" class="conv-result"></div>
+        <p class="muted small">Yaklaşık mutfak ölçüleridir (hacim).</p>
+      </div>
+    </div>
+
+    <!-- Tanıtım turu -->
+    <div id="intro-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <h2>🥗 Eviko'ya hoş geldin!</h2>
+        <ul class="intro-list">
+          <li>📸 Sebzelerinin fotoğrafını çek → sana <b>pratik yemekler</b> önersin.</li>
+          <li>🍽️ "Tabaktaki yemek" ile bir yemeğin <b>kalorisini</b> öğren.</li>
+          <li>📅 Haftalık plan, 🧊 buzdolabı, 📒 günlük, 👨‍🍳 pişirme modu ve dahası.</li>
+          <li>👤 Hesap açıp tarifleri <b>yorumla ve puanla</b>.</li>
+        </ul>
+        <button id="intro-start" class="btn btn-primary intro-start">Başla</button>
       </div>
     </div>
 

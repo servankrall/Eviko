@@ -318,6 +318,7 @@ function renderPlan(data) {
   lastPlan = days;
   const list = el("plan-list");
   el("btn-share-plan").classList.toggle("hidden", days.length === 0);
+  el("btn-plan-shop").classList.toggle("hidden", !days.some((d) => (d.ingredients || []).length));
   if (days.length === 0) {
     list.innerHTML = '<div class="list-empty">Plan oluşturulamadı, tekrar dene.</div>';
     return;
@@ -573,6 +574,8 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeRecipeModal();
     el("settings-modal").classList.add("hidden");
+    el("ing-modal").classList.add("hidden");
+    el("conv-modal").classList.add("hidden");
   }
 });
 
@@ -731,7 +734,7 @@ function renderRecipeDetail() {
     li.addEventListener("click", () => li.classList.toggle("done"))
   );
   modal.querySelectorAll(".ingredient-list li.tappable").forEach((li) =>
-    li.addEventListener("click", () => openStore(li.dataset.item))
+    li.addEventListener("click", () => openIngredientSheet(li.dataset.item, r.title))
   );
   wireSocial(r);
 }
@@ -1617,6 +1620,91 @@ el("btn-clear-diary").addEventListener("click", () => {
     renderDiary();
   }
 });
+
+// ---- Malzeme ikamesi (yerine ne kullanırım?) ----
+const ingModal = el("ing-modal");
+el("ing-close").addEventListener("click", () => ingModal.classList.add("hidden"));
+ingModal.addEventListener("click", (e) => {
+  if (e.target === ingModal) ingModal.classList.add("hidden");
+});
+function openIngredientSheet(item, title) {
+  el("ing-body").innerHTML = `
+    <h3 class="ing-title">${escapeHtml(item)}</h3>
+    <div class="ing-actions">
+      <button class="btn btn-ghost" id="ing-store">🛒 Markete git</button>
+      <button class="btn btn-primary" id="ing-sub">↔️ Yerine ne kullanırım?</button>
+    </div>
+    <div id="ing-sub-result"></div>`;
+  ingModal.classList.remove("hidden");
+  el("ing-store").onclick = () => {
+    ingModal.classList.add("hidden");
+    openStore(item);
+  };
+  el("ing-sub").onclick = () => loadSubstitute(item, title);
+}
+async function loadSubstitute(item, title) {
+  const box = el("ing-sub-result");
+  box.innerHTML = '<p class="muted small">Alternatifler aranıyor…</p>';
+  try {
+    const data = useGemini()
+      ? await window.GeminiClient.substitute(item, title)
+      : await serverPost("/api/substitute", { item, title, language: langPref() });
+    const alts = (data && data.alternatives) || [];
+    box.innerHTML = alts.length
+      ? '<ul class="sub-list">' +
+        alts
+          .map(
+            (a) =>
+              `<li><b>${escapeHtml(a.name)}</b>${a.note ? ` — <span class="muted">${escapeHtml(a.note)}</span>` : ""}</li>`
+          )
+          .join("") +
+        "</ul>"
+      : '<p class="muted small">Uygun alternatif bulunamadı.</p>';
+  } catch (err) {
+    box.innerHTML = `<p class="muted small">${escapeHtml(err.message || "Alternatif alınamadı.")}</p>`;
+  }
+}
+
+// ---- Ölçü çevirici ----
+const convModal = el("conv-modal");
+el("btn-converter").addEventListener("click", () => {
+  convCompute();
+  convModal.classList.remove("hidden");
+});
+el("conv-close").addEventListener("click", () => convModal.classList.add("hidden"));
+convModal.addEventListener("click", (e) => {
+  if (e.target === convModal) convModal.classList.add("hidden");
+});
+el("conv-val").addEventListener("input", convCompute);
+el("conv-unit").addEventListener("change", convCompute);
+function convCompute() {
+  const v = Number(el("conv-val").value) || 0;
+  const ml = v * Number(el("conv-unit").value);
+  const f = (x) => (Math.round(x * 100) / 100).toString().replace(".", ",");
+  el("conv-result").innerHTML = `
+    <div class="conv-out"><b>${f(ml)}</b> ml</div>
+    <div class="muted small">≈ ${f(ml / 200)} su bardağı · ${f(ml / 15)} yemek kaşığı · ${f(ml / 5)} çay kaşığı</div>`;
+}
+
+// ---- Haftanın alışveriş listesi ----
+el("btn-plan-shop").addEventListener("click", () => {
+  const all = [...new Set(lastPlan.flatMap((d) => d.ingredients || []))];
+  if (!all.length) return;
+  addToShopping(all);
+  toast(`${all.length} malzeme listeye eklendi 🛒`);
+  renderShopping();
+  showScreen("shopping");
+});
+
+// ---- Tanıtım turu (ilk açılış) ----
+const introModal = el("intro-modal");
+el("intro-start").addEventListener("click", () => {
+  localStorage.setItem("eviko_seen_intro", "1");
+  introModal.classList.add("hidden");
+});
+if (!localStorage.getItem("eviko_seen_intro")) {
+  setTimeout(() => introModal.classList.remove("hidden"), 400);
+}
 
 // ---- Yardımcılar ----
 function formatQty(n) {
