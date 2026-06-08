@@ -83,6 +83,7 @@ export function demoRecipe(title) {
     difficulty: "kolay",
     caloriesPerServing: 280,
     estimatedCostTl: 95,
+    macros: { proteinG: 14, carbsG: 18, fatG: 16 },
     ingredients: [
       { item: "Domates", quantity: 3, unit: "adet", toTaste: false },
       { item: "Yeşil biber", quantity: 2, unit: "adet", toTaste: false },

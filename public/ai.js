@@ -167,10 +167,10 @@ Yanıtı SADECE şu JSON yapısında ver:
 
   const RECIPE_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
-{"title":"ad","servings":2,"durationMinutes":30,"difficulty":"kolay|orta|zor","caloriesPerServing":420,"estimatedCostTl":85,
+{"title":"ad","servings":2,"durationMinutes":30,"difficulty":"kolay|orta|zor","caloriesPerServing":420,"estimatedCostTl":85,"macros":{"proteinG":20,"carbsG":45,"fatG":15},
 "ingredients":[{"item":"malzeme","quantity":2,"unit":"adet|su bardağı|yemek kaşığı|g|ml","toTaste":false}],
 "steps":["..."],"tips":["..."]}
-"toTaste" true olanlarda "quantity" 0 olabilir. "caloriesPerServing" porsiyon başı tahmini kalori, "estimatedCostTl" tarifin yaklaşık toplam malzeme maliyetidir (Türk Lirası).`;
+"toTaste" true olanlarda "quantity" 0 olabilir. "caloriesPerServing" porsiyon başı tahmini kalori, "estimatedCostTl" tarifin yaklaşık toplam malzeme maliyeti (TL), "macros" porsiyon başı protein/karbonhidrat/yağ (gram).`;
 
   const CALORIE_SHAPE = `
 Yanıtı SADECE şu JSON yapısında ver:
@@ -215,8 +215,9 @@ Tam 7 gün ver (Pazartesi'den Pazar'a).`;
       `"${title}" yemeğinin detaylı, adım adım tarifini ver. ${elde}` +
       "2-4 kişilik temel al ('servings'). Miktarları sayısal 'quantity' + 'unit' ile, " +
       "damak zevkine göre olanları 'toTaste': true ile belirt. Porsiyon başına " +
-      "tahmini kaloriyi 'caloriesPerServing', tarifin yaklaşık toplam malzeme " +
-      "maliyetini 'estimatedCostTl' (Türk Lirası) olarak ver." +
+      "tahmini kaloriyi 'caloriesPerServing', makroları (protein/karbonhidrat/yağ " +
+      "gram) 'macros', tarifin yaklaşık toplam malzeme maliyetini 'estimatedCostTl' " +
+      "(Türk Lirası) olarak ver." +
       prefsLine(prefs) +
       RECIPE_SHAPE +
       langLine();

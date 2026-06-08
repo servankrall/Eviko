@@ -186,6 +186,17 @@ const RECIPE_SCHEMA = {
     difficulty: { type: "string", enum: ["kolay", "orta", "zor"] },
     caloriesPerServing: { type: "integer", description: "Porsiyon başına tahmini kalori (kcal)" },
     estimatedCostTl: { type: "integer", description: "Tarifin yaklaşık toplam malzeme maliyeti (TL)" },
+    macros: {
+      type: "object",
+      description: "Porsiyon başına makro besinler (gram)",
+      properties: {
+        proteinG: { type: "integer" },
+        carbsG: { type: "integer" },
+        fatG: { type: "integer" },
+      },
+      required: ["proteinG", "carbsG", "fatG"],
+      additionalProperties: false,
+    },
     ingredients: {
       type: "array",
       items: {
@@ -220,6 +231,7 @@ const RECIPE_SCHEMA = {
     "difficulty",
     "caloriesPerServing",
     "estimatedCostTl",
+    "macros",
     "ingredients",
     "steps",
     "tips",
@@ -240,8 +252,9 @@ export async function getRecipe({ title, detected = [], preferences = [], langua
     "Tarifi 2-4 kişilik temel al ve bu kişi sayısını 'servings' alanına yaz. " +
     "Malzeme miktarlarını ölçeklenebilir biçimde ver: her malzeme için sayısal " +
     "'quantity', birim için 'unit' ve damak zevkine göre olanlar için 'toTaste' " +
-    "true olsun. Porsiyon başına tahmini kaloriyi 'caloriesPerServing', tarifin " +
-    "yaklaşık toplam malzeme maliyetini 'estimatedCostTl' (TL) olarak ver. " +
+    "true olsun. Porsiyon başına tahmini kaloriyi 'caloriesPerServing', makroları " +
+    "(protein/karbonhidrat/yağ gram) 'macros', tarifin yaklaşık toplam malzeme " +
+    "maliyetini 'estimatedCostTl' (TL) olarak ver. " +
     "Net pişirme adımları ve birkaç pratik ipucu ekle." +
     prefText(preferences) +
     langText(language);

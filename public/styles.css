@@ -1327,6 +1327,82 @@ h2 {
   color: var(--ink);
 }
 
+/* ---------- Sesli arama + tarif makroları ---------- */
+.mic-btn {
+  flex-shrink: 0;
+  width: 46px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.mic-btn.listening {
+  background: var(--tomato);
+  border-color: var(--tomato);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+.recipe-macros {
+  margin-top: -4px;
+}
+[data-theme="dark"] .mic-btn {
+  background: #1d2226;
+}
+
+/* ---------- Pişirme modu ---------- */
+.cook-card {
+  text-align: center;
+}
+.cook-top {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin: 6px 0 16px;
+}
+.cook-step {
+  font-size: 1.5rem;
+  line-height: 1.45;
+  font-weight: 600;
+  min-height: 30vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+.cook-timer {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.cook-count {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--green-dark);
+  margin-right: 12px;
+}
+.cook-count.done {
+  color: var(--tomato);
+  margin-right: 0;
+}
+.cook-nav {
+  display: flex;
+  gap: 10px;
+}
+.cook-nav .btn {
+  flex: 1;
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;

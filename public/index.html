@@ -49,6 +49,7 @@
             placeholder="🔎 Bir yemek ara: lazanya, mercimek çorbası…"
             autocomplete="off"
           />
+          <button type="button" id="search-mic" class="mic-btn hidden" aria-label="Sesle ara">🎤</button>
           <button class="btn btn-primary" type="submit">Ara</button>
         </form>
 
@@ -64,6 +65,9 @@
           <button class="pref-chip" data-pref="Glutensiz">Glutensiz</button>
           <button class="pref-chip" data-pref="Az kalori">Az kalori</button>
           <button class="pref-chip" data-pref="Az malzeme">Az malzeme</button>
+          <button class="pref-chip" data-pref="Sütsüz">Sütsüz</button>
+          <button class="pref-chip" data-pref="Yumurtasız">Yumurtasız</button>
+          <button class="pref-chip" data-pref="Fındıksız">Fındıksız</button>
         </div>
 
         <div class="hero">
@@ -318,6 +322,14 @@
           <p id="auth-hello" class="muted"></p>
           <button id="auth-logout" class="btn btn-ghost auth-submit" type="button">Çıkış yap</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Pişirme modu -->
+    <div id="cook-modal" class="modal hidden">
+      <div class="modal-card cook-card" role="dialog" aria-modal="true">
+        <button id="cook-close" class="modal-close" aria-label="Kapat">×</button>
+        <div id="cook-body"></div>
       </div>
     </div>
 
