@@ -35,6 +35,7 @@
         </button>
         <button class="icon-btn" id="nav-history" aria-label="Geçmiş" title="Geçmiş">🕘</button>
         <button class="icon-btn" id="nav-account" aria-label="Hesap" title="Hesap">👤</button>
+        <button class="icon-btn" id="nav-help" aria-label="Yardım" title="Yardım">❓</button>
         <button class="icon-btn" id="nav-settings" aria-label="Ayarlar" title="Ayarlar">⚙️</button>
       </div>
     </header>
@@ -443,7 +444,52 @@
           <li>📅 Haftalık plan, 🧊 buzdolabı, 📒 günlük, 👨‍🍳 pişirme modu ve dahası.</li>
           <li>👤 Hesap açıp tarifleri <b>yorumla ve puanla</b>.</li>
         </ul>
-        <button id="intro-start" class="btn btn-primary intro-start">Başla</button>
+        <div class="intro-actions">
+          <button id="intro-help" class="btn btn-ghost">Nasıl kullanılır?</button>
+          <button id="intro-start" class="btn btn-primary">Başla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yardım / nasıl kullanılır -->
+    <div id="help-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="help-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>❓ Nasıl kullanılır?</h2>
+        <div class="help-body">
+          <div class="help-step">
+            <h3>📸 1. Yemek bul</h3>
+            <p>Evdeki sebze/meyvelerin fotoğrafını çek <b>ya da</b> "Malzemelerim" kutusuna yaz (ör. <i>domates, biber, yumurta</i>). Eviko yapabileceğin pratik yemekleri listeler. Bir tarife dokununca malzemeleri ve adımları gösterir.</p>
+          </div>
+          <div class="help-step">
+            <h3>🍽️ 2. Kalori öğren</h3>
+            <p>Üstten <b>"Tabaktaki yemek"</b>i seç ve pişmiş bir yemeğin fotoğrafını çek. Eviko tahmini kalorisini ve besin değerlerini söyler.</p>
+          </div>
+          <div class="help-step">
+            <h3>⭐ 3. Kaydet ve planla</h3>
+            <p>Beğendiğin tarifi ⭐ ile favorilere ekle, eksik malzemeleri 🛒 alışveriş listesine at, yediklerini 📒 günlüğe yaz, 📅 haftalık plan oluştur.</p>
+          </div>
+          <div class="help-step">
+            <h3>🚀 4. Daha hızlı ve sınırsız çalışsın (ücretsiz)</h3>
+            <p>"Çok kişi kullanıyor" uyarısı alırsan kendi <b>ücretsiz</b> anahtarını ekleyebilirsin:</p>
+            <ol class="help-ol">
+              <li><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> adresine gir, Google hesabınla <b>"Create API key"</b> de.</li>
+              <li>Oluşan anahtarı kopyala.</li>
+              <li>Eviko'da ⚙️ Ayarlar'ı aç, <b>"Gemini API anahtarı"</b> kutusuna yapıştır ve <b>Kaydet</b>'e bas.</li>
+            </ol>
+            <p class="muted small">Anahtarın yalnızca senin cihazında saklanır, kimseyle paylaşılmaz.</p>
+          </div>
+          <div class="help-step">
+            <h3>💡 İpuçları</h3>
+            <ul class="help-ul">
+              <li>Fotoğrafı iyi ışıkta ve net çek; malzemeler görünsün.</li>
+              <li>Sevmediğin malzemeleri ⚙️ Ayarlar'dan ekle; öneriler onları içermez.</li>
+              <li>Verilerini ⚙️ Ayarlar'dan 💾 yedekleyip başka cihaza taşıyabilirsin.</li>
+              <li>İnternet yokken bile kaydettiğin favori tarifler açılır.</li>
+            </ul>
+          </div>
+        </div>
+        <button id="help-ok" class="btn btn-primary intro-start">Anladım 👍</button>
       </div>
     </div>
 
