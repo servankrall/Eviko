@@ -2026,6 +2026,14 @@ h2 {
   margin-top: 12px;
 }
 
+/* ---------- Markete götür ---------- */
+.market-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 /* ---------- Sağdan-sola (Arapça) ---------- */
 [dir="rtl"] .modal-close {
   right: auto;
