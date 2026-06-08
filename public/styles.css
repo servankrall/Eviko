@@ -1513,6 +1513,67 @@ h2 {
   font-size: 0.85rem;
   font-weight: 600;
 }
+.diary-manual-form {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0;
+}
+.diary-manual-form input {
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+}
+.diary-manual-form input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+.diary-manual-form input[type="number"] {
+  width: 84px;
+}
+[data-theme="dark"] .diary-manual-form input {
+  background: #1d2226;
+  color: var(--ink);
+}
+.diary-week {
+  margin-top: 18px;
+}
+.week-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.week-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 92px;
+}
+.week-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  gap: 4px;
+}
+.week-bar {
+  width: 100%;
+  max-width: 28px;
+  background: var(--green);
+  border-radius: 6px 6px 0 0;
+}
+.week-val {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.week-lbl {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
 .diary-list {
   list-style: none;
   padding: 0;

@@ -1754,7 +1754,43 @@ function renderDiary() {
       renderDiary();
     })
   );
+  renderDiaryWeek();
 }
+function renderDiaryWeek() {
+  const box = el("diary-week");
+  if (!box) return;
+  const names = ["Pzr", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    const total = diary
+      .filter((e) => e.day === key)
+      .reduce((s, e) => s + (e.kcal || 0), 0);
+    days.push({ label: names[d.getDay()], total });
+  }
+  const max = Math.max(calGoal || 0, ...days.map((d) => d.total), 1);
+  box.innerHTML =
+    '<div class="week-title">📈 Son 7 gün (kcal)</div><div class="week-bars">' +
+    days
+      .map(
+        (d) =>
+          `<div class="week-col"><span class="week-val">${d.total || ""}</span><div class="week-bar" style="height:${Math.max(2, Math.round((d.total / max) * 64))}px"></div><span class="week-lbl">${d.label}</span></div>`
+      )
+      .join("") +
+    "</div>";
+}
+el("diary-manual-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = el("diary-food-name").value.trim();
+  const kcal = Math.max(0, Number(el("diary-food-kcal").value) || 0);
+  if (!name) return;
+  addToDiary(name, kcal);
+  el("diary-food-name").value = "";
+  el("diary-food-kcal").value = "";
+  renderDiary();
+});
 el("btn-diary").addEventListener("click", () => {
   renderDiary();
   showScreen("diary");
