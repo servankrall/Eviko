@@ -54,6 +54,7 @@ let recipeFilter = "all";
 let recipeSortTime = false;
 let accent = localStorage.getItem("eviko_accent") || "green";
 let water = store.get("eviko_water", {});
+let favFilter = "";
 
 // ---- API adresi (web'de boş = göreli yol; APK'da ayarlanır) ----
 function apiBase() {
@@ -791,13 +792,22 @@ function toggleFavorite(recipe) {
 }
 function renderFavorites() {
   const list = el("favorites-list");
+  el("fav-search").classList.toggle("hidden", favorites.length === 0);
   if (favorites.length === 0) {
     list.innerHTML = '<div class="list-empty">Henüz favori tarifin yok.<br>Bir tarifi açıp ⭐ ile kaydedebilirsin.</div>';
     return;
   }
-  list.innerHTML = favorites
+  const q = favFilter.trim().toLocaleLowerCase("tr");
+  const items = favorites
+    .map((f, i) => ({ f, i }))
+    .filter(({ f }) => !q || (f.title || "").toLocaleLowerCase("tr").includes(q));
+  if (items.length === 0) {
+    list.innerHTML = '<div class="list-empty">Aramana uygun favori bulunamadı.</div>';
+    return;
+  }
+  list.innerHTML = items
     .map(
-      (f, i) => `
+      ({ f, i }) => `
       <div class="fav-item">
         <div class="fav-main" data-index="${i}">
           <h3>${escapeHtml(f.title)}</h3>
@@ -819,6 +829,11 @@ function renderFavorites() {
     })
   );
 }
+
+el("fav-search").addEventListener("input", (e) => {
+  favFilter = e.target.value;
+  renderFavorites();
+});
 
 // ---- Alışveriş listesi ----
 function addToShopping(names) {
@@ -953,6 +968,52 @@ el("settings-clear").addEventListener("click", () => {
   applyTheme();
   checkHealth();
   toast("Ayarlar temizlendi");
+});
+
+// ---- Veri yedekleme / geri yükleme (cihazda) ----
+const BACKUP_KEYS = [
+  "eviko_favorites", "eviko_shopping", "eviko_prefs", "eviko_history",
+  "eviko_pantry", "eviko_diary", "eviko_notes", "eviko_water",
+  "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
+];
+el("btn-backup").addEventListener("click", () => {
+  const payload = { _eviko: true, version: 1, savedAt: new Date().toISOString(), data: {} };
+  for (const k of BACKUP_KEYS) {
+    const v = localStorage.getItem(k);
+    if (v !== null) payload.data[k] = v;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `eviko-yedek-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Yedek indirildi 💾");
+});
+el("btn-restore").addEventListener("click", () => el("restore-input").click());
+el("restore-input").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const obj = JSON.parse(await file.text());
+    if (!obj || obj._eviko !== true || typeof obj.data !== "object") {
+      toast("Bu bir Eviko yedeği değil.");
+      return;
+    }
+    for (const k of BACKUP_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(obj.data, k)) {
+        localStorage.setItem(k, obj.data[k]);
+      }
+    }
+    toast("Veriler geri yüklendi, yenileniyor…");
+    setTimeout(() => location.reload(), 700);
+  } catch {
+    toast("Yedek dosyası okunamadı.");
+  }
 });
 
 // ---- Geçmiş ----
