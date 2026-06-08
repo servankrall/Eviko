@@ -198,3 +198,18 @@ export async function substitute({ item, title = "", language = "tr" }) {
     langText(language);
   return callGemini([{ text: prompt }]);
 }
+
+// 6) Davet / porsiyon hesaplayıcı
+const EVENT_SHAPE = `
+Yanıtı SADECE şu JSON ile ver:
+{"dish":"ad","people":12,"items":[{"item":"malzeme","quantity":"3 kg","note":"kişi başı ~250 g"}],"estimatedCostTl":0,"tips":["..."]}`;
+
+export async function eventPlan({ people, dish, language = "tr" }) {
+  const prompt =
+    `${people} kişilik bir "${dish}" için alışveriş ve porsiyon listesi çıkar. Her malzeme için ` +
+    "kişi sayısına göre ölçeklenmiş gerçekçi toplam miktarı 'quantity' ile, kişi başı bilgisini " +
+    "'note' ile ver. Yaklaşık toplam maliyeti 'estimatedCostTl' (TL) ve 1-3 ipucunu 'tips' olarak ekle." +
+    EVENT_SHAPE +
+    langText(language);
+  return callGemini([{ text: prompt }]);
+}

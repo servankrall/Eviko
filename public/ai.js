@@ -259,5 +259,17 @@ Tam 7 gün ver (Pazartesi'den Pazar'a). Her gün için 4-6 ana malzemeyi "ingred
     return call([{ text: prompt }]);
   }
 
-  window.GeminiClient = { hasKey, analyze, analyzeText, recipe, calories, planWeek, substitute };
+  async function eventPlan(people, dish) {
+    const prompt =
+      `${people} kişilik bir "${dish}" için alışveriş ve porsiyon listesi çıkar. Her malzeme için ` +
+      "kişi sayısına göre ölçeklenmiş gerçekçi toplam miktarı 'quantity' ile, kişi başı bilgisini " +
+      "'note' ile ver. Yaklaşık toplam maliyeti 'estimatedCostTl' (TL) ve 1-3 ipucunu 'tips' olarak ekle.\n" +
+      `Yanıtı SADECE şu JSON ile ver: {"dish":"${dish}","people":${people},"items":[{"item":"malzeme","quantity":"3 kg","note":"kısa not"}],"estimatedCostTl":0,"tips":["..."]}` +
+      langLine();
+    return call([{ text: prompt }]);
+  }
+
+  window.GeminiClient = {
+    hasKey, analyze, analyzeText, recipe, calories, planWeek, substitute, eventPlan,
+  };
 })();

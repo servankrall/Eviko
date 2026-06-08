@@ -449,3 +449,55 @@ export async function substitute({ item, title = "", language = "tr" }) {
   });
   return parseJson(message);
 }
+
+// ---------------------------------------------------------------------------
+// 6) Davet / porsiyon hesaplayıcı
+// ---------------------------------------------------------------------------
+
+const EVENT_SCHEMA = {
+  type: "object",
+  properties: {
+    dish: { type: "string" },
+    people: { type: "integer" },
+    items: {
+      type: "array",
+      description: "Kişi sayısına göre ölçeklenmiş malzeme listesi",
+      items: {
+        type: "object",
+        properties: {
+          item: { type: "string", description: "Malzeme adı" },
+          quantity: { type: "string", description: "Toplam miktar, ör. '3 kg', '12 adet'" },
+          note: { type: "string", description: "Kısa not (kişi başı vb.), yoksa boş" },
+        },
+        required: ["item", "quantity", "note"],
+        additionalProperties: false,
+      },
+    },
+    estimatedCostTl: { type: "integer", description: "Yaklaşık toplam maliyet (TL)" },
+    tips: { type: "array", items: { type: "string" } },
+  },
+  required: ["dish", "people", "items", "estimatedCostTl", "tips"],
+  additionalProperties: false,
+};
+
+/**
+ * Belirli kişi sayısı için bir yemek/etkinliğin malzeme ve porsiyon listesini çıkarır.
+ * @param {{ people: number, dish: string, language?: string }} args
+ */
+export async function eventPlan({ people, dish, language = "tr" }) {
+  const instruction =
+    `${people} kişilik bir "${dish}" için alışveriş ve porsiyon listesi çıkar. ` +
+    "Her malzeme için kişi sayısına göre ölçeklenmiş gerçekçi toplam miktarı 'quantity' " +
+    "(ör. '3 kg', '12 adet') ile, gerekiyorsa kişi başı bilgisini 'note' ile ver. Yaklaşık " +
+    "toplam maliyeti 'estimatedCostTl' (TL) ve 1-3 pratik ipucunu 'tips' olarak ekle." +
+    langText(language);
+  const message = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 2048,
+    thinking: { type: "adaptive" },
+    system: PERSONA,
+    messages: [{ role: "user", content: instruction }],
+    output_config: { format: { type: "json_schema", schema: EVENT_SCHEMA } },
+  });
+  return parseJson(message);
+}

@@ -1927,6 +1927,67 @@ function renderBadges() {
     .join("");
 }
 
+// ---- Davet / porsiyon hesaplayıcı ----
+const eventModal = el("event-modal");
+el("btn-event").addEventListener("click", () => {
+  el("event-result").innerHTML = "";
+  eventModal.classList.remove("hidden");
+});
+el("event-close").addEventListener("click", () => eventModal.classList.add("hidden"));
+eventModal.addEventListener("click", (e) => {
+  if (e.target === eventModal) eventModal.classList.add("hidden");
+});
+el("event-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const people = Math.max(1, Number(el("event-people").value) || 1);
+  const dish = el("event-dish").value.trim();
+  if (!dish) {
+    toast("Ne hazırlayacağını yaz.");
+    return;
+  }
+  const box = el("event-result");
+  box.innerHTML = '<p class="muted small">Hesaplanıyor…</p>';
+  try {
+    const data = useGemini()
+      ? await window.GeminiClient.eventPlan(people, dish)
+      : await serverPost("/api/event-plan", { people, dish, language: langPref() });
+    renderEvent(data);
+  } catch (err) {
+    box.innerHTML = `<p class="muted small">${escapeHtml(err.message || "Hesaplama yapılamadı.")}</p>`;
+  }
+});
+function renderEvent(data) {
+  const items = (data && data.items) || [];
+  const box = el("event-result");
+  if (!items.length) {
+    box.innerHTML = '<p class="muted small">Liste oluşturulamadı, tekrar dene.</p>';
+    return;
+  }
+  box.innerHTML =
+    `<div class="event-head">${escapeHtml(data.dish || "")} · ${data.people || ""} kişi${
+      data.estimatedCostTl ? ` · ~${data.estimatedCostTl} TL` : ""
+    }</div>` +
+    '<ul class="event-list">' +
+    items
+      .map(
+        (it) =>
+          `<li><span class="ev-q">${escapeHtml(it.quantity || "")}</span> <span class="ev-i">${escapeHtml(
+            it.item || ""
+          )}</span>${it.note ? `<span class="muted small"> — ${escapeHtml(it.note)}</span>` : ""}</li>`
+      )
+      .join("") +
+    "</ul>" +
+    '<button class="btn btn-ghost" id="event-to-shop">🛒 Listeyi alışverişe ekle</button>' +
+    (data.tips && data.tips.length
+      ? `<div class="event-tips muted small">💡 ${data.tips.map(escapeHtml).join("<br>💡 ")}</div>`
+      : "");
+  el("event-to-shop").onclick = () => {
+    addToShopping(items.map((it) => it.item).filter(Boolean));
+    toast("Malzemeler listeye eklendi 🛒");
+    eventModal.classList.add("hidden");
+  };
+}
+
 // ---- Beslenme günlüğü (Bugün) ----
 function todayKey() {
   const d = new Date();

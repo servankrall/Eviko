@@ -112,6 +112,7 @@
         </div>
 
         <button id="btn-plan" class="btn btn-ghost plan-btn">📅 Haftalık yemek planı</button>
+        <button id="btn-event" class="btn btn-ghost plan-btn">🎉 Davet / porsiyon hesaplayıcı</button>
 
         <div class="tools-row">
           <button id="btn-surprise-dish" class="btn btn-ghost">🎡 Ne yesem?</button>
@@ -479,6 +480,21 @@
         <h2>🏆 Rozetlerim</h2>
         <p id="badges-summary" class="muted small"></p>
         <div id="badges-grid" class="badges-grid"></div>
+      </div>
+    </div>
+
+    <!-- Davet / porsiyon hesaplayıcı -->
+    <div id="event-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="event-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>🎉 Davet / porsiyon hesaplayıcı</h2>
+        <p class="muted small">Kaç kişiye, ne hazırlıyorsun? Malzeme miktarlarını çıkarayım.</p>
+        <form id="event-form" class="event-form">
+          <input id="event-people" type="number" min="1" max="200" value="6" aria-label="Kişi sayısı" />
+          <input id="event-dish" type="text" placeholder="ör. mangal, pilav, kısır" autocomplete="off" />
+          <button class="btn btn-primary" type="submit">Hesapla</button>
+        </form>
+        <div id="event-result" class="event-result"></div>
       </div>
     </div>
 
