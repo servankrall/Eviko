@@ -197,6 +197,7 @@ const RECIPE_SCHEMA = {
       required: ["proteinG", "carbsG", "fatG"],
       additionalProperties: false,
     },
+    pairing: { type: "string", description: "Yanında iyi giden içecek/yan lezzet" },
     ingredients: {
       type: "array",
       items: {
@@ -232,6 +233,7 @@ const RECIPE_SCHEMA = {
     "caloriesPerServing",
     "estimatedCostTl",
     "macros",
+    "pairing",
     "ingredients",
     "steps",
     "tips",
@@ -254,8 +256,8 @@ export async function getRecipe({ title, detected = [], preferences = [], langua
     "'quantity', birim için 'unit' ve damak zevkine göre olanlar için 'toTaste' " +
     "true olsun. Porsiyon başına tahmini kaloriyi 'caloriesPerServing', makroları " +
     "(protein/karbonhidrat/yağ gram) 'macros', tarifin yaklaşık toplam malzeme " +
-    "maliyetini 'estimatedCostTl' (TL) olarak ver. " +
-    "Net pişirme adımları ve birkaç pratik ipucu ekle." +
+    "maliyetini 'estimatedCostTl' (TL), yanında iyi giden bir öneriyi 'pairing' " +
+    "olarak ver. Net pişirme adımları ve birkaç pratik ipucu ekle." +
     prefText(preferences) +
     langText(language);
 
