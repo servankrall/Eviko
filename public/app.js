@@ -1069,6 +1069,7 @@ function addToShopping(names) {
 function renderShopping() {
   const list = el("shopping-list");
   el("btn-clear-shop").classList.toggle("hidden", shopping.length === 0);
+  el("btn-market").classList.toggle("hidden", shopping.length === 0);
   if (shopping.length === 0) {
     list.innerHTML = '<div class="list-empty">Listen boş.<br>Tariflerden veya yukarıdan malzeme ekleyebilirsin.</div>';
     return;
@@ -1379,6 +1380,44 @@ function openStore(name) {
     navigator.geolocation.getCurrentPosition((p) => go(p.coords), () => go(null), { timeout: 5000 });
   } else go(null);
 }
+
+// ---- Markete götür (online market / harita / kopyala) ----
+const marketModal = el("market-modal");
+el("btn-market").addEventListener("click", () => {
+  if (!shopping.length) {
+    toast("Listen boş.");
+    return;
+  }
+  marketModal.classList.remove("hidden");
+});
+el("market-close").addEventListener("click", () => marketModal.classList.add("hidden"));
+marketModal.addEventListener("click", (e) => {
+  if (e.target === marketModal) marketModal.classList.add("hidden");
+});
+el("market-maps").addEventListener("click", () => {
+  openStore("market manav");
+  marketModal.classList.add("hidden");
+});
+el("market-migros").addEventListener("click", () => {
+  const first = shopping.find((s) => !s.checked) || shopping[0];
+  const q = encodeURIComponent(first ? first.name : "market");
+  window.open(`https://www.migros.com.tr/arama?q=${q}`, "_blank");
+  marketModal.classList.add("hidden");
+});
+el("market-getir").addEventListener("click", () => {
+  window.open("https://getir.com/", "_blank");
+  marketModal.classList.add("hidden");
+});
+el("market-copy").addEventListener("click", async () => {
+  const text = "🛒 Alışveriş listem (Eviko):\n" + shopping.map((s) => "- " + s.name).join("\n");
+  try {
+    await navigator.clipboard.writeText(text);
+    toast("Liste kopyalandı 📋");
+  } catch {
+    toast("Kopyalanamadı.");
+  }
+  marketModal.classList.add("hidden");
+});
 
 // ---- Tarif sosyal verisi (fotoğraf + yorum + puan) ----
 function socialHtml(r) {

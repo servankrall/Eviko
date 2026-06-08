@@ -250,7 +250,10 @@
           <button class="btn btn-primary small" type="submit">Ekle</button>
         </form>
         <ul id="shopping-list" class="shopping-list"></ul>
-        <button id="btn-clear-shop" class="btn btn-ghost small hidden">Tümünü temizle</button>
+        <div class="diary-foot">
+          <button id="btn-market" class="btn btn-ghost small hidden">🛒 Markete götür</button>
+          <button id="btn-clear-shop" class="btn btn-ghost small hidden">Tümünü temizle</button>
+        </div>
       </section>
 
       <!-- 7) Geçmiş -->
@@ -528,6 +531,21 @@
         <button id="coach-close" class="modal-close" aria-label="Kapat">×</button>
         <h2>🧑‍🏫 Haftalık koçluk</h2>
         <div id="coach-body" class="coach-body"></div>
+      </div>
+    </div>
+
+    <!-- Markete götür -->
+    <div id="market-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="market-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>🛒 Markete götür</h2>
+        <p class="muted small">Eksik malzemelerini online markette ara ya da yakındaki marketleri bul.</p>
+        <div class="market-actions">
+          <button class="btn btn-ghost" id="market-maps">📍 Yakındaki marketler (Harita)</button>
+          <button class="btn btn-ghost" id="market-migros">🛒 Migros Sanal Market'te ara</button>
+          <button class="btn btn-ghost" id="market-getir">🛵 Getir'i aç</button>
+          <button class="btn btn-ghost" id="market-copy">📋 Listeyi kopyala</button>
+        </div>
       </div>
     </div>
 
