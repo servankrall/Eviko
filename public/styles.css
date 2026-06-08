@@ -2026,6 +2026,16 @@ h2 {
   margin-top: 12px;
 }
 
+/* ---------- Sağdan-sola (Arapça) ---------- */
+[dir="rtl"] .modal-close {
+  right: auto;
+  left: 14px;
+}
+[dir="rtl"] .badge {
+  right: auto;
+  left: 2px;
+}
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
