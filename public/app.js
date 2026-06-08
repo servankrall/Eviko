@@ -619,7 +619,7 @@ function renderCalories(data) {
       ${data.healthNote ? `<div class="cal-note">💡 ${escapeHtml(data.healthNote)}</div>` : ""}
       <button id="cal-add" class="btn btn-primary cal-add">📒 Güne ekle</button>
     </div>`;
-  el("cal-add").onclick = () => addToDiary(data.dishName, data.totalCalories);
+  el("cal-add").onclick = () => addToDiary(data.dishName, data.totalCalories, data.macros);
 }
 
 // ---- Tarif detayı (modal) ----
@@ -789,7 +789,7 @@ function renderRecipeDetail() {
   el("btn-cook").onclick = () => openCook(r);
   el("btn-print").onclick = () => window.print();
   const da = el("btn-diary-add");
-  if (da) da.onclick = () => addToDiary(r.title, r.caloriesPerServing);
+  if (da) da.onclick = () => addToDiary(r.title, r.caloriesPerServing, r.macros);
   const note = el("recipe-note");
   if (note) {
     note.value = notes[r.title] || "";
@@ -1699,9 +1699,16 @@ function todayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
-function addToDiary(name, kcal) {
+function addToDiary(name, kcal, macros) {
   const k = Math.round(Number(kcal) || 0);
-  diary.push({ name: String(name).slice(0, 80), kcal: k, day: todayKey(), ts: Date.now() });
+  const m = macros
+    ? {
+        p: Math.round(Number(macros.proteinG) || 0),
+        c: Math.round(Number(macros.carbsG) || 0),
+        f: Math.round(Number(macros.fatG) || 0),
+      }
+    : null;
+  diary.push({ name: String(name).slice(0, 80), kcal: k, m, day: todayKey(), ts: Date.now() });
   diary = diary.slice(-300);
   store.set("eviko_diary", diary);
   toast(`Güne eklendi: ${name} (${k} kcal)`);
@@ -1713,6 +1720,20 @@ function renderDiary() {
   el("diary-goal-label").textContent = calGoal;
   el("diary-goal-input").value = calGoal;
   el("water-count").textContent = water[todayKey()] || 0;
+  const mac = items.reduce(
+    (a, e) => {
+      if (e.m) {
+        a.p += e.m.p || 0;
+        a.c += e.m.c || 0;
+        a.f += e.m.f || 0;
+      }
+      return a;
+    },
+    { p: 0, c: 0, f: 0 }
+  );
+  el("diary-protein").textContent = mac.p;
+  el("diary-carbs").textContent = mac.c;
+  el("diary-fat").textContent = mac.f;
   const fill = el("diary-bar-fill");
   fill.style.width = (calGoal > 0 ? Math.min(100, Math.round((sum / calGoal) * 100)) : 0) + "%";
   fill.style.background = sum > calGoal ? "var(--tomato)" : "var(--green)";

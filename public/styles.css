@@ -1499,6 +1499,20 @@ h2 {
   border-radius: 999px;
   transition: width 0.3s;
 }
+.diary-macros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.macro-chip {
+  background: var(--green-soft);
+  color: var(--green-dark);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
 .diary-list {
   list-style: none;
   padding: 0;
