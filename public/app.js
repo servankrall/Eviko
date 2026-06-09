@@ -84,7 +84,9 @@ function showScreen(name) {
 }
 
 // ---- Başlangıç: sağlık kontrolü + rozetler ----
-init();
+// NOT: init() dosyanın EN SONUNDA çağrılır — böylece TIPS/DISHES gibi tüm
+// const'lar tanımlandıktan sonra çalışır (erken çağrı "before initialization"
+// hatasıyla tüm betiği öldürüyordu).
 function init() {
   registerServiceWorker();
   applyTheme();
@@ -2590,10 +2592,10 @@ el("btn-plan-shop").addEventListener("click", () => {
 const introModal = el("intro-modal");
 el("intro-start").addEventListener("click", () => {
   burstFromEl(el("intro-start"), 16); // bitirişte küçük kutlama
-  localStorage.setItem("eviko_seen_intro", "1");
+  localStorage.setItem("eviko_seen_intro2", "1");
   introModal.classList.add("hidden");
 });
-if (!localStorage.getItem("eviko_seen_intro")) {
+if (!localStorage.getItem("eviko_seen_intro2")) {
   setTimeout(() => {
     markThemeOpts();
     markAccent();
@@ -2617,7 +2619,7 @@ helpModal.addEventListener("click", (e) => {
   if (e.target === helpModal) closeHelp();
 });
 el("intro-help").addEventListener("click", () => {
-  localStorage.setItem("eviko_seen_intro", "1");
+  localStorage.setItem("eviko_seen_intro2", "1");
   introModal.classList.add("hidden");
   openHelp();
 });
@@ -2650,3 +2652,6 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => (t.style.opacity = "0"), 2200);
 }
+
+// ---- Uygulamayı başlat (tüm tanımlar ve dinleyiciler hazır olduktan sonra) ----
+init();
