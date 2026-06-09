@@ -17,6 +17,51 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Dokunmatik güvenilirliği: hızlı dokunuşların tıklamaya dönmesi için.
+   touch-action: manipulation çift-dokunma yakınlaştırma gecikmesini kapatır;
+   user-select: none ise dokunuşun "metin seçme" sanılıp tıklamayı kaçırmasını
+   önler (önceden bazı butonlar basılı tutmadan çalışmıyordu). */
+button,
+a,
+label,
+select,
+summary,
+[role="button"],
+.btn,
+.icon-btn,
+.mode-btn,
+.pref-chip,
+.chip,
+.accent-dot,
+.recipe-card,
+.plan-card,
+.fav-main,
+.tappable,
+.badge-card,
+.dropzone,
+.shop-item .check {
+  touch-action: manipulation;
+}
+button,
+.btn,
+.icon-btn,
+.mode-btn,
+.pref-chip,
+.accent-dot,
+.recipe-card,
+.plan-card,
+.fav-main,
+.tappable,
+.badge-card,
+.dropzone,
+.shop-item .check,
+.chip-x {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 html,
 body {
   margin: 0;
