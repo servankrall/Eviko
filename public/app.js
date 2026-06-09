@@ -135,6 +135,20 @@ document.querySelectorAll(".accent-dot").forEach((d) =>
     markAccent();
   })
 );
+// İlk açılış görünüm seçici: tema düğmeleri (Otomatik/Açık/Koyu).
+function markThemeOpts() {
+  const t = localStorage.getItem("eviko_theme") || "auto";
+  document.querySelectorAll(".theme-opt").forEach((b) =>
+    b.classList.toggle("active", b.dataset.theme === t)
+  );
+}
+document.querySelectorAll(".theme-opt").forEach((b) =>
+  b.addEventListener("click", () => {
+    localStorage.setItem("eviko_theme", b.dataset.theme);
+    applyTheme();
+    markThemeOpts();
+  })
+);
 // ---- Su takibi (günlük) ----
 function changeWater(delta) {
   const k = todayKey();
@@ -210,15 +224,13 @@ async function checkHealth() {
     if (!ct.includes("application/json")) throw new Error("no-server");
     const d = await r.json();
     if (d.demo) {
-      banner.textContent =
-        "Demo modu: örnek veriler. Kendi fotoğraflarını analiz etmek için ⚙️ Ayarlar'dan ücretsiz Gemini API anahtarı ekleyin.";
+      banner.textContent = "Şu an örnek (demo) veriler gösteriliyor.";
       banner.classList.remove("hidden");
     } else {
       banner.classList.add("hidden");
     }
   } catch {
-    banner.textContent =
-      "Başlamak için ⚙️ Ayarlar'dan ücretsiz Gemini API anahtarını ekle (aistudio.google.com/apikey).";
+    banner.textContent = "Şu an sunucuya ulaşılamıyor; internetini kontrol edip tekrar dene.";
     banner.classList.remove("hidden");
   }
 }
@@ -534,38 +546,26 @@ function friendlyError(err) {
       emoji: "📡",
       title: "İnternet yok",
       text: "Bağlantın kapalı görünüyor. Açınca tekrar dene. Kaydettiğin favori tarifler internetsiz de açılır.",
-      key: false,
-    };
-  }
-  if (/anahtar\S* (yok|gerek)|geçersiz|yetkisiz/i.test(m)) {
-    return {
-      emoji: "🔑",
-      title: "Ücretsiz anahtar gerekli",
-      text: "Devam etmek için kendi ücretsiz Gemini anahtarını ekle — 30 saniye sürer ve bir daha beklemezsin.",
-      key: true,
     };
   }
   if (/sunucu|bağlan|ulaşıl|bulunamadı/i.test(m)) {
     return {
       emoji: "📡",
-      title: "Sunucuya ulaşılamadı",
-      text: "İnternetin açık ama servise ulaşamadık. Tekrar dene; ya da kendi ücretsiz anahtarını ekleyerek sunucuya hiç ihtiyaç duymadan çalış.",
-      key: true,
+      title: "Bağlantı kurulamadı",
+      text: "Şu an sunucuya ulaşamadık. İnternetini kontrol edip birkaç saniye sonra tekrar dene.",
     };
   }
   if (/yoğun|çok kişi|yanıt alınamadı|kullanıyor|429|overload/i.test(m)) {
     return {
       emoji: "⏳",
       title: "Şu an yoğunluk var",
-      text: "Ücretsiz servis çok kullanılıyor. Birazdan tekrar dene — ya da hiç beklememek için kendi ücretsiz anahtarını ekle.",
-      key: true,
+      text: "Çok fazla kişi kullanıyor. Birkaç saniye bekleyip tekrar dene — genelde hemen düzelir.",
     };
   }
   return {
     emoji: "😕",
     title: "Bir şeyler ters gitti",
     text: m || "Lütfen tekrar dene.",
-    key: true,
   };
 }
 
@@ -576,28 +576,15 @@ function fail(err, type) {
   el("error-emoji").textContent = info.emoji;
   el("error-title").textContent = info.title;
   el("error-text").textContent = info.text;
-  el("error-key").classList.toggle("hidden", !info.key);
   const cached =
     type === "results" ? lastResultsData : type === "calories" ? lastCaloriesData : null;
   el("error-cached").classList.toggle("hidden", !cached);
   showScreen("error");
 }
 
-function openSettingsToKey() {
-  el("nav-settings").click();
-  setTimeout(() => {
-    const k = el("gemini-key-input");
-    if (k) k.focus();
-  }, 60);
-}
-
 el("error-retry").addEventListener("click", () => {
   if (typeof lastAction === "function") lastAction();
   else showScreen("capture");
-});
-el("error-key").addEventListener("click", () => {
-  showScreen("capture");
-  openSettingsToKey();
 });
 el("error-cached").addEventListener("click", () => {
   if (lastFailType === "results" && lastResultsData) {
@@ -1166,10 +1153,6 @@ function updateBadges() {
 // ---- Ayarlar ----
 const settingsModal = el("settings-modal");
 el("nav-settings").addEventListener("click", () => {
-  el("gemini-key-input").value = localStorage.getItem("eviko_gemini_key") || "";
-  el("gemini-model-select").value =
-    localStorage.getItem("eviko_gemini_model") || "gemini-2.5-flash";
-  el("api-base-input").value = localStorage.getItem("eviko_api_base") || "";
   el("theme-select").value = localStorage.getItem("eviko_theme") || "auto";
   el("lang-select").value = localStorage.getItem("eviko_lang") || "tr";
   markAccent();
@@ -1180,34 +1163,23 @@ settingsModal.addEventListener("click", (e) => {
   if (e.target === settingsModal) settingsModal.classList.add("hidden");
 });
 el("settings-save").addEventListener("click", () => {
-  const k = el("gemini-key-input").value.trim();
-  const v = el("api-base-input").value.trim();
-  if (k) localStorage.setItem("eviko_gemini_key", k);
-  else localStorage.removeItem("eviko_gemini_key");
-  localStorage.setItem("eviko_gemini_model", el("gemini-model-select").value);
-  if (v) localStorage.setItem("eviko_api_base", v);
-  else localStorage.removeItem("eviko_api_base");
   localStorage.setItem("eviko_theme", el("theme-select").value);
   localStorage.setItem("eviko_lang", el("lang-select").value);
   applyTheme();
   applyDir();
+  markThemeOpts();
   settingsModal.classList.add("hidden");
   checkHealth();
   toast("Ayarlar kaydedildi ✓");
 });
 el("settings-clear").addEventListener("click", () => {
-  localStorage.removeItem("eviko_gemini_key");
-  localStorage.removeItem("eviko_gemini_model");
-  localStorage.removeItem("eviko_api_base");
-  el("gemini-key-input").value = "";
-  el("gemini-model-select").value = "gemini-2.5-flash";
-  el("api-base-input").value = "";
   localStorage.removeItem("eviko_theme");
   el("theme-select").value = "auto";
   localStorage.removeItem("eviko_lang");
   el("lang-select").value = "tr";
   applyTheme();
   applyDir();
+  markThemeOpts();
   checkHealth();
   toast("Ayarlar temizlendi");
 });
@@ -2571,7 +2543,11 @@ el("intro-start").addEventListener("click", () => {
   introModal.classList.add("hidden");
 });
 if (!localStorage.getItem("eviko_seen_intro")) {
-  setTimeout(() => introModal.classList.remove("hidden"), 400);
+  setTimeout(() => {
+    markThemeOpts();
+    markAccent();
+    introModal.classList.remove("hidden");
+  }, 400);
 }
 
 // ---- Yardım / nasıl kullanılır ----
