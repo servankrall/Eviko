@@ -181,11 +181,9 @@ h2 {
 @keyframes fade {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 
@@ -463,6 +461,34 @@ h2 {
   transform: translateY(-3px);
   box-shadow: 0 12px 26px rgba(31, 42, 36, 0.12);
 }
+.recipe-card:active {
+  transform: scale(0.98);
+}
+/* Kart giriş animasyonu (+ sonuç ızgarasında kademeli cascade) */
+.recipe-card,
+.plan-card,
+.fav-item,
+.badge-card,
+.home-card {
+  animation: card-in 0.32s ease backwards;
+}
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.recipe-card:nth-child(2) { animation-delay: 0.05s; }
+.recipe-card:nth-child(3) { animation-delay: 0.1s; }
+.recipe-card:nth-child(4) { animation-delay: 0.15s; }
+.recipe-card:nth-child(5) { animation-delay: 0.2s; }
+.recipe-card:nth-child(6) { animation-delay: 0.25s; }
+.recipe-card:nth-child(7) { animation-delay: 0.3s; }
+.recipe-card:nth-child(8) { animation-delay: 0.35s; }
 .recipe-card h3 {
   margin: 0 0 6px;
   font-size: 1.12rem;
@@ -613,6 +639,17 @@ h2 {
   padding: 26px 22px calc(34px + env(safe-area-inset-bottom));
   position: relative;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+  animation: modal-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @media (min-width: 560px) {
   .modal-card {
@@ -1833,8 +1870,16 @@ h2 {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mascot {
-    animation: none;
+  .mascot,
+  .screen,
+  .modal,
+  .modal-card,
+  .recipe-card,
+  .plan-card,
+  .fav-item,
+  .badge-card,
+  .home-card {
+    animation: none !important;
   }
 }
 .help-body {
