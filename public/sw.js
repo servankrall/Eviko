@@ -1,5 +1,6 @@
-// Eviko service worker — uygulama kabuğunu önbelleğe alır (PWA / çevrimdışı destek).
-const CACHE = "eviko-v33";
+// Eviko service worker — AĞ ÖNCELİKLİ (çevrimiçiyken her zaman en güncel sürüm).
+// Önceki sürüm önbellek-öncelikliydi ve güncellemeler geç geliyordu; düzeltildi.
+const CACHE = "eviko-v34";
 const SHELL = [
   "/",
   "/index.html",
@@ -14,7 +15,13 @@ const SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL))
+      .catch(() => {})
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -26,31 +33,38 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Sayfanın isteğiyle bekleyen yeni sürümü hemen devreye al.
+self.addEventListener("message", (e) => {
+  if (e.data === "skip-waiting") self.skipWaiting();
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
 
-  // API çağrıları önbelleğe alınmaz — her zaman ağdan.
+  // API çağrıları asla önbelleğe alınmaz — her zaman ağdan.
   if (url.pathname.startsWith("/api/")) return;
 
-  // Sayfa gezinmelerinde: ağ önce, çevrimdışıysa kabuk.
-  if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
-    return;
-  }
-
-  // Diğer statik dosyalar: önbellek önce, yoksa ağdan getir ve sakla.
+  // AĞ ÖNCE: çevrimiçiyken daima taze içerik; çevrimdışıysa önbellekten.
   event.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).then((res) => {
+    fetch(request)
+      .then((res) => {
+        // Başarılı yanıtın bir kopyasını önbelleğe yaz (çevrimdışı için).
+        if (res && res.ok && res.type === "basic") {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
-          return res;
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) => {
+          if (cached) return cached;
+          // Gezinmelerde çevrimdışı yedek olarak uygulama kabuğu.
+          if (request.mode === "navigate") return caches.match("/index.html");
+          return Response.error();
         })
-    )
+      )
   );
 });
