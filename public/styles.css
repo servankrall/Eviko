@@ -1763,6 +1763,80 @@ h2 {
   background: var(--green-soft);
   color: var(--green-dark);
 }
+
+/* ---------- İlk açılış: Duolingo tarzı + salata maskotu ---------- */
+#intro-modal .modal-card {
+  text-align: center;
+}
+.mascot {
+  font-size: 4.2rem;
+  line-height: 1;
+  margin: 4px 0 2px;
+  display: inline-block;
+  animation: mascot-bounce 2.4s ease-in-out infinite;
+}
+@keyframes mascot-bounce {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+}
+.intro-title {
+  font-size: 1.5rem;
+  margin: 0 0 6px;
+}
+.intro-sub {
+  margin: 0 auto 6px;
+  line-height: 1.55;
+  max-width: 30em;
+}
+#intro-modal .setup-label {
+  text-align: center;
+}
+#intro-modal .theme-pick,
+#intro-modal .accent-picker {
+  justify-content: center;
+}
+#intro-modal .accent-dot {
+  width: 40px;
+  height: 40px;
+}
+/* Duolingo tarzı 3B "Başla" düğmesi */
+.intro-go {
+  box-shadow: 0 5px 0 var(--green-dark), 0 8px 14px rgba(47, 158, 68, 0.3);
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+.intro-go:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--green-dark), 0 4px 8px rgba(47, 158, 68, 0.3);
+}
+
+/* Seçimlerde havaya zıplayan sebze-meyveler */
+.veggie-particle {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+  animation: veggie-pop 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+@keyframes veggie-pop {
+  0% {
+    transform: translate(-50%, -50%) translateY(6px) scale(0.4);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(-120px) translateX(var(--dx, 0)) scale(1.15)
+      rotate(var(--rot, 0deg));
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot {
+    animation: none;
+  }
+}
 .help-body {
   margin: 8px 0 16px;
 }
