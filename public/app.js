@@ -122,6 +122,32 @@ function applyDir() {
   // Arapça için sağdan-sola yazım yönü.
   document.documentElement.dir = (localStorage.getItem("eviko_lang") || "tr") === "ar" ? "rtl" : "ltr";
 }
+// ---- Sebze-meyve "zıplama" animasyonu (seçimlerde küçük kutlama) ----
+const VEGGIE_EMOJIS = ["🍅", "🥕", "🥦", "🍆", "🌽", "🥬", "🫑", "🍓", "🥑", "🧅", "🍋", "🥔", "🍏", "🌶️"];
+const prefersReducedMotion =
+  typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function veggieBurst(x, y, count = 7) {
+  if (prefersReducedMotion) return;
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement("span");
+    s.className = "veggie-particle";
+    s.textContent = VEGGIE_EMOJIS[Math.floor(Math.random() * VEGGIE_EMOJIS.length)];
+    s.style.left = x + "px";
+    s.style.top = y + "px";
+    s.style.setProperty("--dx", (Math.random() * 140 - 70).toFixed(0) + "px");
+    s.style.setProperty("--rot", (Math.random() * 140 - 70).toFixed(0) + "deg");
+    s.style.fontSize = (1.1 + Math.random() * 0.9).toFixed(2) + "rem";
+    s.style.animationDelay = (Math.random() * 0.08).toFixed(2) + "s";
+    document.body.appendChild(s);
+    s.addEventListener("animationend", () => s.remove());
+  }
+}
+function burstFromEl(elm, count) {
+  if (!elm) return;
+  const r = elm.getBoundingClientRect();
+  veggieBurst(r.left + r.width / 2, r.top + r.height / 2, count);
+}
+
 function markAccent() {
   document.querySelectorAll(".accent-dot").forEach((d) =>
     d.classList.toggle("active", d.dataset.accent === accent)
@@ -133,6 +159,7 @@ document.querySelectorAll(".accent-dot").forEach((d) =>
     localStorage.setItem("eviko_accent", accent);
     applyAccent();
     markAccent();
+    burstFromEl(d, 8);
   })
 );
 // İlk açılış görünüm seçici: tema düğmeleri (Otomatik/Açık/Koyu).
@@ -147,6 +174,7 @@ document.querySelectorAll(".theme-opt").forEach((b) =>
     localStorage.setItem("eviko_theme", b.dataset.theme);
     applyTheme();
     markThemeOpts();
+    burstFromEl(b, 8);
   })
 );
 // ---- Su takibi (günlük) ----
@@ -2539,6 +2567,7 @@ el("btn-plan-shop").addEventListener("click", () => {
 // ---- Tanıtım turu (ilk açılış) ----
 const introModal = el("intro-modal");
 el("intro-start").addEventListener("click", () => {
+  burstFromEl(el("intro-start"), 16); // bitirişte küçük kutlama
   localStorage.setItem("eviko_seen_intro", "1");
   introModal.classList.add("hidden");
 });
@@ -2547,6 +2576,7 @@ if (!localStorage.getItem("eviko_seen_intro")) {
     markThemeOpts();
     markAccent();
     introModal.classList.remove("hidden");
+    setTimeout(() => burstFromEl(el("intro-mascot"), 6), 200);
   }, 400);
 }
 

@@ -568,19 +568,17 @@
     <!-- Tanıtım turu -->
     <div id="intro-modal" class="modal hidden">
       <div class="modal-card settings-card" role="dialog" aria-modal="true">
-        <h2>🥗 Eviko'ya hoş geldin!</h2>
-        <p class="muted small">Evdeki sebzelerle ne pişeceğini bul, kalorisini öğren, planla. <b>Ücretsiz</b> — anahtar gerekmez. 🎉</p>
-        <ul class="intro-list">
-          <li>📸 Fotoğraf çek → <b>pratik yemekler</b>. 🍽️ Tabağın <b>kalorisini</b> öğren.</li>
-          <li>📅 Plan · 🧊 buzdolabı · 📒 günlük · 👨‍🍳 pişirme modu ve dahası.</li>
-        </ul>
+        <div class="mascot" id="intro-mascot" aria-hidden="true">🥗</div>
+        <h2 class="intro-title">Merhaba! Ben Eviko</h2>
+        <p class="muted intro-sub">Evdeki sebzelerle ne pişeceğini bulalım, kalorini öğrenelim, planlayalım. <b>Ücretsiz</b> — anahtar gerekmez. Önce görünümünü seçelim! 👇</p>
         <div class="setup-block">
-          <div class="setup-label">🎨 Görünümünü seç</div>
+          <div class="setup-label">🎨 Tema</div>
           <div class="theme-pick">
             <button type="button" class="theme-opt" data-theme="auto">Otomatik</button>
             <button type="button" class="theme-opt" data-theme="light">☀️ Açık</button>
             <button type="button" class="theme-opt" data-theme="dark">🌙 Koyu</button>
           </div>
+          <div class="setup-label">🌈 Renk</div>
           <div class="accent-picker">
             <button type="button" class="accent-dot" data-accent="green" style="background:#2f9e44" aria-label="Yeşil"></button>
             <button type="button" class="accent-dot" data-accent="tomato" style="background:#e8590c" aria-label="Turuncu"></button>
@@ -590,7 +588,7 @@
         </div>
         <div class="intro-actions">
           <button id="intro-help" class="btn btn-ghost">Nasıl kullanılır?</button>
-          <button id="intro-start" class="btn btn-primary">Başla</button>
+          <button id="intro-start" class="btn btn-primary intro-go">Hadi başlayalım! 🎉</button>
         </div>
       </div>
     </div>
