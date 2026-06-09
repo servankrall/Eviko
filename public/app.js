@@ -103,9 +103,31 @@ function init() {
 }
 
 function registerServiceWorker() {
-  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-  }
+  if (!("serviceWorker" in navigator) || !location.protocol.startsWith("http")) return;
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  // Yeni sürüm devreye girince sayfayı bir kez tazele (güncelleme otomatik gelsin).
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloaded || !hadController) return;
+    reloaded = true;
+    location.reload();
+  });
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then((reg) => {
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener("statechange", () => {
+          // Yeni sürüm kurulduysa ve zaten bir sürüm çalışıyorsa hemen devreye al.
+          if (nw.state === "installed" && navigator.serviceWorker.controller) {
+            nw.postMessage("skip-waiting");
+          }
+        });
+      });
+      reg.update().catch(() => {});
+    })
+    .catch(() => {});
 }
 
 // ---- Tema (açık/koyu/otomatik) ----
