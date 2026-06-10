@@ -2362,6 +2362,9 @@ h2 {
 [data-theme="dark"] .weight-ctrl input { background:#1d2226; }
 .weight-chart { margin-top:10px; }
 
+/* ---------- Davet şablonları ---------- */
+.event-presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;

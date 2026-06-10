@@ -1263,6 +1263,7 @@ el("nav-settings").addEventListener("click", () => {
   el("theme-select").value = localStorage.getItem("eviko_theme") || "auto";
   el("lang-select").value = localStorage.getItem("eviko_lang") || "tr";
   el("fontsize-select").value = localStorage.getItem("eviko_fontsize") || "100";
+  el("speech-rate-select").value = localStorage.getItem("eviko_speech_rate") || "1";
   markAccent();
   settingsModal.classList.remove("hidden");
 });
@@ -1274,6 +1275,7 @@ el("settings-save").addEventListener("click", () => {
   localStorage.setItem("eviko_theme", el("theme-select").value);
   localStorage.setItem("eviko_lang", el("lang-select").value);
   localStorage.setItem("eviko_fontsize", el("fontsize-select").value);
+  localStorage.setItem("eviko_speech_rate", el("speech-rate-select").value);
   applyTheme();
   applyDir();
   applyFontSize();
@@ -1289,6 +1291,8 @@ el("settings-clear").addEventListener("click", () => {
   el("lang-select").value = "tr";
   localStorage.removeItem("eviko_fontsize");
   el("fontsize-select").value = "100";
+  localStorage.removeItem("eviko_speech_rate");
+  el("speech-rate-select").value = "1";
   applyTheme();
   applyDir();
   applyFontSize();
@@ -1313,7 +1317,7 @@ const BACKUP_KEYS = [
   "eviko_favorites", "eviko_my_recipes", "eviko_shopping", "eviko_prefs",
   "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_diary", "eviko_notes",
   "eviko_water", "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
-  "eviko_fontsize", "eviko_weights",
+  "eviko_fontsize", "eviko_weights", "eviko_speech_rate",
 ];
 el("btn-backup").addEventListener("click", () => {
   const payload = { _eviko: true, version: 1, savedAt: new Date().toISOString(), data: {} };
@@ -1451,7 +1455,8 @@ function toggleSpeak(r) {
     ". Hazırlanışı: " +
     (r.steps || []).map((s, i) => `${i + 1}. adım. ${s}`).join(" ");
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = "tr-TR";
+  u.lang = langPref() === "en" ? "en-US" : "tr-TR";
+  u.rate = Number(localStorage.getItem("eviko_speech_rate")) || 1;
   u.onend = () => {
     if (el("btn-speak")) el("btn-speak").textContent = "🔊 Sesli oku";
   };
@@ -2385,6 +2390,12 @@ el("event-close").addEventListener("click", () => eventModal.classList.add("hidd
 eventModal.addEventListener("click", (e) => {
   if (e.target === eventModal) eventModal.classList.add("hidden");
 });
+eventModal.querySelectorAll(".event-presets .season-chip").forEach((b) =>
+  b.addEventListener("click", () => {
+    el("event-dish").value = b.dataset.dish;
+    el("event-dish").focus();
+  })
+);
 el("event-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const people = Math.max(1, Number(el("event-people").value) || 1);

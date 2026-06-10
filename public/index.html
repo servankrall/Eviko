@@ -407,6 +407,13 @@
           <option value="125">Çok büyük</option>
         </select>
 
+        <label class="field-label" for="speech-rate-select">Sesli okuma hızı</label>
+        <select id="speech-rate-select">
+          <option value="0.8">Yavaş</option>
+          <option value="1">Normal</option>
+          <option value="1.3">Hızlı</option>
+        </select>
+
         <label class="field-label">Sevmediğim malzemeler</label>
         <p class="muted small">Bu malzemeler önerilerde ve tariflerde kullanılmaz.</p>
         <form id="avoid-form" class="avoid-form">
@@ -520,6 +527,13 @@
         <button id="event-close" class="modal-close" aria-label="Kapat">×</button>
         <h2>🎉 Davet / porsiyon hesaplayıcı</h2>
         <p class="muted small">Kaç kişiye, ne hazırlıyorsun? Malzeme miktarlarını çıkarayım.</p>
+        <div class="event-presets">
+          <button type="button" class="season-chip" data-dish="Doğum günü partisi (pasta, atıştırmalık, içecek)">🎂 Doğum günü</button>
+          <button type="button" class="season-chip" data-dish="Misafir için akşam yemeği (çorba, ana yemek, salata, tatlı)">🍽️ Misafir</button>
+          <button type="button" class="season-chip" data-dish="Zengin kahvaltı sofrası">☀️ Kahvaltı</button>
+          <button type="button" class="season-chip" data-dish="İftar sofrası (çorba, ana yemek, pilav, tatlı)">🌙 İftar</button>
+          <button type="button" class="season-chip" data-dish="Mangal partisi (et, köfte, salata, içecek)">🔥 Mangal</button>
+        </div>
         <form id="event-form" class="event-form">
           <input id="event-people" type="number" min="1" max="200" value="6" aria-label="Kişi sayısı" />
           <input id="event-dish" type="text" placeholder="ör. mangal, pilav, kısır" autocomplete="off" />
@@ -708,7 +722,7 @@
       </div>
     </div>
 
-    <footer class="footer muted small">Eviko · sürüm 46 · Claude ile geliştirildi</footer>
+    <footer class="footer muted small">Eviko · sürüm 47 · Claude ile geliştirildi</footer>
 
     <script src="/config.js"></script>
     <script src="/ai.js"></script>
