@@ -103,6 +103,23 @@ function init() {
   updateOnlineStatus();
   refreshAuth();
   loadHome();
+  handleShortcut();
+}
+// PWA kısayolları (uygulama simgesine basılı tutunca) için ?go= yönlendirmesi.
+function handleShortcut() {
+  try {
+    const go = new URLSearchParams(location.search).get("go");
+    if (go === "diary") {
+      renderDiary();
+      showScreen("diary");
+    } else if (go === "shopping") {
+      renderShopping();
+      showScreen("shopping");
+    } else if (go === "assistant") {
+      el("assistant-input").value = "";
+      el("assistant-modal").classList.remove("hidden");
+    }
+  } catch {}
 }
 
 function registerServiceWorker() {
@@ -841,10 +858,9 @@ modal.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    // Açık olan her modalı kapat (erişilebilirlik).
+    document.querySelectorAll(".modal:not(.hidden)").forEach((m) => m.classList.add("hidden"));
     closeRecipeModal();
-    el("settings-modal").classList.add("hidden");
-    el("ing-modal").classList.add("hidden");
-    el("conv-modal").classList.add("hidden");
   }
 });
 
