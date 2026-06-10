@@ -361,6 +361,13 @@
           <button type="button" class="accent-dot" data-accent="purple" style="background:#7048e8" aria-label="Mor"></button>
         </div>
 
+        <label class="field-label" for="fontsize-select">Yazı boyutu</label>
+        <select id="fontsize-select">
+          <option value="100">Normal</option>
+          <option value="112">Büyük</option>
+          <option value="125">Çok büyük</option>
+        </select>
+
         <label class="field-label">Sevmediğim malzemeler</label>
         <p class="muted small">Bu malzemeler önerilerde ve tariflerde kullanılmaz.</p>
         <form id="avoid-form" class="avoid-form">
@@ -376,6 +383,9 @@
           <button type="button" id="btn-restore" class="btn btn-ghost">📥 Geri yükle</button>
           <input id="restore-input" type="file" accept="application/json,.json" hidden />
         </div>
+
+        <label class="field-label">Eviko'yu paylaş</label>
+        <button type="button" id="btn-share-app" class="btn btn-ghost share-app-btn">📤 Arkadaşına öner</button>
 
         <div class="settings-actions">
           <button id="settings-save" class="btn btn-primary">Kaydet</button>
@@ -634,7 +644,7 @@
       </div>
     </div>
 
-    <footer class="footer muted small">Eviko · sürüm 39 · Claude ile geliştirildi</footer>
+    <footer class="footer muted small">Eviko · sürüm 40 · Claude ile geliştirildi</footer>
 
     <script src="/config.js"></script>
     <script src="/ai.js"></script>
