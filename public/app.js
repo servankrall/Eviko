@@ -100,7 +100,7 @@ function init() {
   renderPantry();
   renderTip();
   trackActiveDay();
-  checkHealth();
+  updateOnlineStatus();
   refreshAuth();
   loadHome();
 }
@@ -308,6 +308,20 @@ async function checkHealth() {
     banner.classList.remove("hidden");
   }
 }
+
+// Çevrimdışıyken sakin bir bilgi göster; çevrimiçide normal sağlık kontrolü.
+function updateOnlineStatus() {
+  const banner = el("banner");
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    banner.textContent =
+      "📴 Çevrimdışısın. Yeni tarif/analiz için internet gerekir; favori tariflerin ve listelerin yine açılır.";
+    banner.classList.remove("hidden");
+  } else {
+    checkHealth();
+  }
+}
+window.addEventListener("online", updateOnlineStatus);
+window.addEventListener("offline", updateOnlineStatus);
 
 // ---- Mod seçici ----
 el("mode-ingredients").addEventListener("click", () => setMode("ingredients"));
