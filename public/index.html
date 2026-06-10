@@ -79,6 +79,12 @@
           <button class="pref-chip" data-pref="Sütsüz">Sütsüz</button>
           <button class="pref-chip" data-pref="Yumurtasız">Yumurtasız</button>
           <button class="pref-chip" data-pref="Fındıksız">Fındıksız</button>
+          <button class="pref-chip" data-pref="15 dakikada hazır olmalı">⏱️ 15 dk</button>
+          <button class="pref-chip" data-pref="Tek tencerede/tavada pişmeli">🍲 Tek tencere</button>
+          <button class="pref-chip" data-pref="Air fryer'a uygun">♨️ Air fryer</button>
+          <button class="pref-chip" data-pref="Çocukların seveceği, çocuk dostu">🧒 Çocuk dostu</button>
+          <button class="pref-chip" data-pref="Diyabet dostu, düşük şekerli">🩺 Diyabet dostu</button>
+          <button class="pref-chip" data-pref="Bütçe dostu, ucuz malzemeli">💸 Bütçe dostu</button>
         </div>
 
         <div class="hero">
@@ -130,6 +136,7 @@
           <button id="btn-diary" class="btn btn-ghost">📒 Günlük</button>
           <button id="btn-converter" class="btn btn-ghost">📐 Çevirici</button>
           <button id="btn-badges" class="btn btn-ghost">🏆 Rozetler</button>
+          <button id="btn-glossary" class="btn btn-ghost">📖 Sözlük</button>
         </div>
 
         <div id="tip-card" class="tip-card">
@@ -520,6 +527,31 @@
       </div>
     </div>
 
+    <!-- Mutfak terimleri sözlüğü -->
+    <div id="glossary-modal" class="modal hidden">
+      <div class="modal-card settings-card" role="dialog" aria-modal="true">
+        <button id="glossary-close" class="modal-close" aria-label="Kapat">×</button>
+        <h2>📖 Mutfak sözlüğü</h2>
+        <p class="muted small">Tariflerde geçen terimlerin kısa açıklamaları.</p>
+        <dl class="glossary">
+          <dt>Soteleme</dt><dd>Az yağda, yüksek ateşte hızlıca kavurmak.</dd>
+          <dt>Mühürleme</dt><dd>Etin dış yüzeyini yüksek ateşte hızla kızartıp suyunu içinde tutmak.</dd>
+          <dt>Haşlama</dt><dd>Malzemeyi kaynar suda pişirmek.</dd>
+          <dt>Şoklama (blanch)</dt><dd>Kısa süre kaynatıp hemen buzlu suya almak; rengi/dokuyu korur.</dd>
+          <dt>Karamelize etmek</dt><dd>Şekeri/soğanı kısık ateşte tatlanıp kahverengileşene dek pişirmek.</dd>
+          <dt>Marine etmek</dt><dd>Malzemeyi baharatlı karışımda bekleterek tatlandırmak/yumuşatmak.</dd>
+          <dt>Terbiye</dt><dd>Genelde yumurta-limon/yoğurtla çorbaya kıvam ve tat vermek.</dd>
+          <dt>Julyen</dt><dd>İnce, kibrit çöpü şeklinde uzun doğrama.</dd>
+          <dt>Dinlendirme</dt><dd>Hamuru/eti pişirme öncesi/sonrası bir süre bekletmek.</dd>
+          <dt>Glaze (sırlama)</dt><dd>Parlak, hafif şekerli/yağlı bir kaplama vermek.</dd>
+          <dt>Rendelemek</dt><dd>Rende ile ince parçalara ayırmak.</dd>
+          <dt>Süzmek</dt><dd>Sıvıyı katı kısımdan ayırmak.</dd>
+          <dt>Kıvam almak</dt><dd>Sosun/çorbanın istenen koyuluğa gelmesi.</dd>
+          <dt>Pane etmek</dt><dd>Un–yumurta–galeta ununa bulayıp kızartmak.</dd>
+        </dl>
+      </div>
+    </div>
+
     <!-- Haftalık koçluk -->
     <div id="coach-modal" class="modal hidden">
       <div class="modal-card settings-card" role="dialog" aria-modal="true">
@@ -660,7 +692,7 @@
       </div>
     </div>
 
-    <footer class="footer muted small">Eviko · sürüm 44 · Claude ile geliştirildi</footer>
+    <footer class="footer muted small">Eviko · sürüm 45 · Claude ile geliştirildi</footer>
 
     <script src="/config.js"></script>
     <script src="/ai.js"></script>
