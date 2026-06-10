@@ -99,6 +99,7 @@ function init() {
   updateBadges();
   renderPantry();
   renderTip();
+  renderSeason();
   trackActiveDay();
   updateOnlineStatus();
   refreshAuth();
@@ -1312,7 +1313,7 @@ const BACKUP_KEYS = [
   "eviko_favorites", "eviko_my_recipes", "eviko_shopping", "eviko_prefs",
   "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_diary", "eviko_notes",
   "eviko_water", "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
-  "eviko_fontsize",
+  "eviko_fontsize", "eviko_weights",
 ];
 el("btn-backup").addEventListener("click", () => {
   const payload = { _eviko: true, version: 1, savedAt: new Date().toISOString(), data: {} };
@@ -2193,6 +2194,77 @@ function renderTip() {
   if (t) t.textContent = TIPS[dayOfYear() % TIPS.length];
 }
 
+// ---- Bu ayın mevsimi (yerel veri) ----
+const SEASONAL = [
+  ["Lahana", "Pırasa", "Karnabahar", "Ispanak", "Portakal", "Mandalina", "Havuç", "Kereviz"],
+  ["Pırasa", "Lahana", "Ispanak", "Brokoli", "Portakal", "Pancar", "Kereviz"],
+  ["Ispanak", "Enginar", "Bakla", "Taze soğan", "Maydanoz", "Roka", "Pırasa"],
+  ["Enginar", "Bakla", "Taze soğan", "Marul", "Çilek", "Dereotu", "Bezelye"],
+  ["Çilek", "Kayısı", "Taze fasulye", "Bezelye", "Salatalık", "Marul", "Yeşil erik"],
+  ["Domates", "Salatalık", "Kiraz", "Kayısı", "Kabak", "Biber", "Vişne"],
+  ["Domates", "Biber", "Patlıcan", "Karpuz", "Kavun", "Şeftali", "Mısır"],
+  ["Patlıcan", "Biber", "Domates", "İncir", "Üzüm", "Bamya", "Kavun"],
+  ["Üzüm", "İncir", "Elma", "Patlıcan", "Biber", "Nar", "Ayva"],
+  ["Nar", "Elma", "Ayva", "Balkabağı", "Karnabahar", "Mandalina", "Pırasa"],
+  ["Pırasa", "Lahana", "Mandalina", "Portakal", "Balkabağı", "Kestane", "Havuç"],
+  ["Portakal", "Mandalina", "Lahana", "Pırasa", "Karnabahar", "Kereviz", "Nar"],
+];
+function renderSeason() {
+  const box = el("season-chips");
+  if (!box) return;
+  const list = SEASONAL[new Date().getMonth()] || [];
+  box.innerHTML = list
+    .map((p) => `<button class="season-chip" data-p="${escapeHtml(p)}">${escapeHtml(p)}</button>`)
+    .join("");
+  box.querySelectorAll(".season-chip").forEach((b) =>
+    b.addEventListener("click", () => runManual(b.dataset.p))
+  );
+}
+
+// ---- Kilo takibi ----
+let weights = store.get("eviko_weights", []);
+el("weight-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const kg = Number(el("weight-input").value);
+  if (!kg || kg <= 0) return;
+  weights.push({ kg: Math.round(kg * 10) / 10, day: todayKey(), ts: Date.now() });
+  weights = weights.slice(-120);
+  store.set("eviko_weights", weights);
+  el("weight-input").value = "";
+  renderWeight();
+  haptic(10);
+  toast("Kilo kaydedildi ⚖️");
+});
+function renderWeight() {
+  const box = el("weight-chart");
+  if (!box) return;
+  const last = weights.slice(-8);
+  if (!last.length) {
+    box.innerHTML = '<p class="muted small">Kilonu kaydet; değişimini burada gör.</p>';
+    return;
+  }
+  const vals = last.map((w) => w.kg);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const range = max - min || 1;
+  const latest = vals[vals.length - 1];
+  const diff = (latest - vals[0]).toFixed(1);
+  box.innerHTML =
+    `<div class="muted small">Son: <b>${latest} kg</b>${
+      last.length > 1 ? ` · değişim ${diff > 0 ? "+" : ""}${diff} kg` : ""
+    }</div>` +
+    '<div class="week-bars">' +
+    last
+      .map(
+        (w) =>
+          `<div class="week-col"><div class="week-bar" style="height:${
+            Math.round(((w.kg - min) / range) * 52) + 10
+          }px" title="${w.kg} kg"></div></div>`
+      )
+      .join("") +
+    "</div>";
+}
+
 // ---- Aktif gün takibi (rozet serisi için) ----
 function trackActiveDay() {
   const days = store.get("eviko_active_days", []);
@@ -2542,6 +2614,7 @@ function renderDiary() {
     })
   );
   renderDiaryWeek();
+  renderWeight();
 }
 function renderDiaryWeek() {
   const box = el("diary-week");
