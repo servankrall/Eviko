@@ -171,6 +171,21 @@ function burstFromEl(elm, count) {
   const r = elm.getBoundingClientRect();
   veggieBurst(r.left + r.width / 2, r.top + r.height / 2, count);
 }
+// Ekranın üstünden minik kutlama (sonuç gelince vb.).
+function celebrate(count = 10) {
+  const w = (typeof window !== "undefined" && window.innerWidth) || 360;
+  veggieBurst(w / 2, 96, count);
+}
+// Hafif dokunsal geri bildirim (destekleyen cihazlarda).
+function haptic(ms = 10) {
+  try {
+    if (!prefersReducedMotion && navigator.vibrate) navigator.vibrate(ms);
+  } catch {}
+}
+// Sevimli, maskotlu boş ekran.
+function emptyState(emoji, text) {
+  return `<div class="empty-state"><div class="empty-emoji">${emoji}</div><p>${text}</p></div>`;
+}
 
 function markAccent() {
   document.querySelectorAll(".accent-dot").forEach((d) =>
@@ -184,6 +199,7 @@ document.querySelectorAll(".accent-dot").forEach((d) =>
     applyAccent();
     markAccent();
     burstFromEl(d, 8);
+    haptic(8);
   })
 );
 // İlk açılış görünüm seçici: tema düğmeleri (Otomatik/Açık/Koyu).
@@ -199,6 +215,7 @@ document.querySelectorAll(".theme-opt").forEach((b) =>
     applyTheme();
     markThemeOpts();
     burstFromEl(b, 8);
+    haptic(8);
   })
 );
 // ---- Su takibi (günlük) ----
@@ -695,6 +712,7 @@ function renderResults(data) {
   recipeSortTime = false;
   renderRecipeControls();
   renderRecipeCards();
+  if (recipes.length) celebrate(10); // yemekler bulununca minik kutlama
 }
 
 function renderRecipeControls() {
@@ -989,6 +1007,7 @@ function toggleFavorite(recipe) {
     favorites = favorites.filter((f) => f.title !== recipe.title);
   } else {
     favorites.push(recipe);
+    haptic(12); // favoriye eklerken hafif titreşim
   }
   store.set("eviko_favorites", favorites);
   updateBadges();
@@ -997,7 +1016,7 @@ function renderFavorites() {
   const list = el("favorites-list");
   el("fav-search").classList.toggle("hidden", favorites.length === 0);
   if (favorites.length === 0) {
-    list.innerHTML = '<div class="list-empty">Henüz favori tarifin yok.<br>Bir tarifi açıp ⭐ ile kaydedebilirsin.</div>';
+    list.innerHTML = emptyState("⭐", "Henüz favori tarifin yok.<br>Bir tarifi açıp ⭐ ile kaydet.");
     return;
   }
   const q = favFilter.trim().toLocaleLowerCase("tr");
@@ -1084,7 +1103,7 @@ function renderMyRecipes() {
   const box = el("myrec-list");
   if (!myRecipes.length) {
     box.innerHTML =
-      '<div class="list-empty">Henüz kendi tarifin yok.<br>"➕ Yeni tarif ekle" ile başla.</div>';
+      emptyState("✍️", 'Henüz kendi tarifin yok.<br>"➕ Yeni tarif ekle" ile başla.');
     return;
   }
   box.innerHTML = myRecipes
@@ -1131,7 +1150,7 @@ function renderShopping() {
   el("btn-clear-shop").classList.toggle("hidden", shopping.length === 0);
   el("btn-market").classList.toggle("hidden", shopping.length === 0);
   if (shopping.length === 0) {
-    list.innerHTML = '<div class="list-empty">Listen boş.<br>Tariflerden veya yukarıdan malzeme ekleyebilirsin.</div>';
+    list.innerHTML = emptyState("🛒", "Listen boş.<br>Tariflerden veya yukarıdan malzeme ekle.");
     return;
   }
   list.innerHTML = shopping
@@ -1302,7 +1321,7 @@ function renderHistory() {
   el("btn-clear-history").classList.toggle("hidden", history.length === 0);
   if (history.length === 0) {
     list.innerHTML =
-      '<div class="list-empty">Henüz geçmiş yok.<br>Bir analiz yaptığında burada görünür.</div>';
+      emptyState("🕘", "Henüz geçmiş yok.<br>Bir analiz yaptığında burada görünür.");
     return;
   }
   list.innerHTML = history
@@ -1991,6 +2010,8 @@ function renderCook() {
   if (fin)
     fin.onclick = () => {
       closeCook();
+      haptic(20);
+      celebrate(14); // pişirme bitti — kutlama
       toast("Afiyet olsun! 🎉");
     };
 }
@@ -2451,7 +2472,7 @@ function renderDiary() {
             `<li class="shop-item"><span class="name">${escapeHtml(e.name)}</span><span class="ccal">${e.kcal} kcal</span><button class="remove" data-ts="${e.ts}" aria-label="Sil">×</button></li>`
         )
         .join("")
-    : '<div class="list-empty">Bugün henüz bir şey eklemedin.</div>';
+    : emptyState("📒", "Bugün henüz bir şey eklemedin.");
   list.querySelectorAll("[data-ts]").forEach((b) =>
     b.addEventListener("click", () => {
       diary = diary.filter((e) => String(e.ts) !== b.dataset.ts);
