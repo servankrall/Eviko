@@ -393,6 +393,10 @@ h2 {
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
+[data-theme="dark"] .skel-card {
+  background: linear-gradient(100deg, #1d2226 30%, #2a3338 50%, #1d2226 70%);
+  background-size: 200% 100%;
+}
 
 /* ---------- Hata ekranı ---------- */
 .error-box {
@@ -1137,12 +1141,13 @@ h2 {
 [data-theme="dark"] .btn-ghost,
 [data-theme="dark"] .pref-chip,
 [data-theme="dark"] .manual-form input,
-[data-theme="dark"] #theme-select,
-[data-theme="dark"] #api-base-input,
-[data-theme="dark"] #gemini-key-input,
-[data-theme="dark"] #gemini-model-select,
+[data-theme="dark"] select,
 [data-theme="dark"] #shop-add-input,
 [data-theme="dark"] .stepper button {
+  background: #1d2226;
+  color: var(--ink);
+}
+[data-theme="dark"] select option {
   background: #1d2226;
   color: var(--ink);
 }
