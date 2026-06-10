@@ -2595,6 +2595,11 @@ el("intro-start").addEventListener("click", () => {
   localStorage.setItem("eviko_seen_intro2", "1");
   introModal.classList.add("hidden");
 });
+el("intro-account").addEventListener("click", () => {
+  localStorage.setItem("eviko_seen_intro2", "1");
+  introModal.classList.add("hidden");
+  openAuth();
+});
 if (!localStorage.getItem("eviko_seen_intro2")) {
   setTimeout(() => {
     markThemeOpts();
