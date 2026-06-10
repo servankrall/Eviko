@@ -922,7 +922,7 @@ function renderRecipeDetail() {
     <div class="recipe-detail">
       <div id="recipe-photo-slot">${
         currentSocial && currentSocial.photo
-          ? `<img class="recipe-photo" src="${escapeHtml(currentSocial.photo)}" alt="${escapeHtml(r.title)}" />`
+          ? `<img class="recipe-photo" src="${escapeHtml(currentSocial.photo)}" alt="${escapeHtml(r.title)}" loading="lazy" decoding="async" />`
           : ""
       }</div>
       <h2>${escapeHtml(r.title)}</h2>

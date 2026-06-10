@@ -373,6 +373,26 @@ h2 {
   font-weight: 700;
   margin-top: 8px;
 }
+/* Yükleme iskeletleri (modern parıltı efekti) */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin: 26px auto 0;
+  padding: 0 4px;
+}
+.skel-card {
+  height: 92px;
+  border-radius: var(--radius);
+  background: linear-gradient(100deg, var(--green-soft) 30%, #f4f8f4 50%, var(--green-soft) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.25s ease-in-out infinite;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
 
 /* ---------- Hata ekranı ---------- */
 .error-box {
@@ -1915,6 +1935,7 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
   .mascot,
   .empty-emoji,
+  .skel-card,
   .screen,
   .modal,
   .modal-card,
