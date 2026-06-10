@@ -92,6 +92,7 @@ function init() {
   applyTheme();
   applyAccent();
   applyDir();
+  applyFontSize();
   initPrefs();
   renderAvoid();
   setMode(mode);
@@ -138,6 +139,10 @@ function applyTheme() {
   const dark =
     t === "dark" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+function applyFontSize() {
+  const s = localStorage.getItem("eviko_fontsize") || "100";
+  document.documentElement.style.fontSize = s + "%";
 }
 function applyAccent() {
   document.documentElement.dataset.accent = accent;
@@ -1226,6 +1231,7 @@ const settingsModal = el("settings-modal");
 el("nav-settings").addEventListener("click", () => {
   el("theme-select").value = localStorage.getItem("eviko_theme") || "auto";
   el("lang-select").value = localStorage.getItem("eviko_lang") || "tr";
+  el("fontsize-select").value = localStorage.getItem("eviko_fontsize") || "100";
   markAccent();
   settingsModal.classList.remove("hidden");
 });
@@ -1236,8 +1242,10 @@ settingsModal.addEventListener("click", (e) => {
 el("settings-save").addEventListener("click", () => {
   localStorage.setItem("eviko_theme", el("theme-select").value);
   localStorage.setItem("eviko_lang", el("lang-select").value);
+  localStorage.setItem("eviko_fontsize", el("fontsize-select").value);
   applyTheme();
   applyDir();
+  applyFontSize();
   markThemeOpts();
   settingsModal.classList.add("hidden");
   checkHealth();
@@ -1248,11 +1256,25 @@ el("settings-clear").addEventListener("click", () => {
   el("theme-select").value = "auto";
   localStorage.removeItem("eviko_lang");
   el("lang-select").value = "tr";
+  localStorage.removeItem("eviko_fontsize");
+  el("fontsize-select").value = "100";
   applyTheme();
   applyDir();
+  applyFontSize();
   markThemeOpts();
   checkHealth();
   toast("Ayarlar temizlendi");
+});
+el("btn-share-app").addEventListener("click", async () => {
+  const url = "https://eviko.onrender.com";
+  const text = "Eviko ile evdeki sebzelerden ne pişeceğini bul, kalorisini öğren! 🥗";
+  try {
+    if (navigator.share) await navigator.share({ title: "Eviko", text, url });
+    else {
+      await navigator.clipboard.writeText(text + " " + url);
+      toast("Bağlantı kopyalandı 📋");
+    }
+  } catch {}
 });
 
 // ---- Veri yedekleme / geri yükleme (cihazda) ----
@@ -1260,6 +1282,7 @@ const BACKUP_KEYS = [
   "eviko_favorites", "eviko_my_recipes", "eviko_shopping", "eviko_prefs",
   "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_diary", "eviko_notes",
   "eviko_water", "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
+  "eviko_fontsize",
 ];
 el("btn-backup").addEventListener("click", () => {
   const payload = { _eviko: true, version: 1, savedAt: new Date().toISOString(), data: {} };

@@ -2078,6 +2078,10 @@ h2 {
 .backup-actions .btn {
   flex: 1;
 }
+.share-app-btn {
+  width: 100%;
+  margin-top: 2px;
+}
 
 /* ---------- Günün ipucu kartı ---------- */
 .tip-card {
