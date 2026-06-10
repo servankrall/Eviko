@@ -2265,6 +2265,14 @@ el("badges-close").addEventListener("click", () => badgesModal.classList.add("hi
 badgesModal.addEventListener("click", (e) => {
   if (e.target === badgesModal) badgesModal.classList.add("hidden");
 });
+
+// ---- Mutfak terimleri sözlüğü ----
+const glossaryModal = el("glossary-modal");
+el("btn-glossary").addEventListener("click", () => glossaryModal.classList.remove("hidden"));
+el("glossary-close").addEventListener("click", () => glossaryModal.classList.add("hidden"));
+glossaryModal.addEventListener("click", (e) => {
+  if (e.target === glossaryModal) glossaryModal.classList.add("hidden");
+});
 function renderBadges() {
   const favCount = favorites.length;
   const diaryDays = new Set(diary.map((e) => e.day)).size;
