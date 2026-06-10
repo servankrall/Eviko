@@ -147,6 +147,14 @@
           </div>
         </div>
 
+        <div id="season-card" class="tip-card">
+          <span class="tip-icon">🌿</span>
+          <div>
+            <div class="tip-label">Bu ayın mevsimi · dokun, öneri al</div>
+            <div id="season-chips" class="season-chips"></div>
+          </div>
+        </div>
+
         <div id="pantry-box" class="pantry-box">
           <h2>🧊 Buzdolabım</h2>
           <p class="muted small">Sık kullandığın malzemeleri kaydet; tek dokunuşla onlardan yemek öner.</p>
@@ -330,6 +338,14 @@
             <button id="water-plus" aria-label="Artır">+</button>
           </div>
         </div>
+        <div class="water-row">
+          <span>⚖️ Kilo</span>
+          <form id="weight-form" class="weight-ctrl">
+            <input id="weight-input" type="number" step="0.1" min="0" max="500" placeholder="kg" aria-label="Kilo (kg)" />
+            <button class="btn btn-ghost small" type="submit">Kaydet</button>
+          </form>
+        </div>
+        <div id="weight-chart" class="weight-chart"></div>
         <form id="diary-manual-form" class="diary-manual-form">
           <input id="diary-food-name" type="text" placeholder="Yemek/atıştırmalık adı" autocomplete="off" />
           <input id="diary-food-kcal" type="number" min="0" step="10" placeholder="kcal" />
@@ -692,7 +708,7 @@
       </div>
     </div>
 
-    <footer class="footer muted small">Eviko · sürüm 45 · Claude ile geliştirildi</footer>
+    <footer class="footer muted small">Eviko · sürüm 46 · Claude ile geliştirildi</footer>
 
     <script src="/config.js"></script>
     <script src="/ai.js"></script>

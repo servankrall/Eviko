@@ -2345,6 +2345,23 @@ h2 {
   left: 2px;
 }
 
+
+/* ---------- Mevsim çipleri + kilo ---------- */
+.season-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.season-chip {
+  border:1px solid var(--line); background:var(--card); color:var(--ink);
+  border-radius:999px; padding:5px 11px; font-size:.82rem; font-weight:600;
+  font-family:inherit; cursor:pointer;
+}
+.season-chip:active { transform:scale(.96); }
+.weight-ctrl { display:flex; align-items:center; gap:8px; }
+.weight-ctrl input {
+  width:90px; border:1.5px solid var(--line); border-radius:999px;
+  padding:8px 12px; font-size:1rem; font-family:inherit; background:#fff; color:var(--ink);
+}
+[data-theme="dark"] .weight-ctrl input { background:#1d2226; }
+.weight-chart { margin-top:10px; }
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
