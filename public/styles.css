@@ -2382,6 +2382,9 @@ h2 {
 .exp-badge.exp-soon { color:#e8590c; }
 .exp-badge.exp-past { color:#e03131; }
 
+.reminder-row { display:block; margin:8px 0; font-size:.92rem; cursor:pointer; line-height:1.5; }
+.reminder-row input { margin-right:6px; vertical-align:middle; }
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
