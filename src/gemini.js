@@ -2,8 +2,17 @@
 // Anahtar: GEMINI_API_KEY  (https://aistudio.google.com/apikey üzerinden ücretsiz alınır)
 // REST API kullanılır (ek SDK bağımlılığı yok).
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+// Model zinciri: biri yoğun/kota dolu/hata verirse sıradakine geçilir.
+// Her modelin ayrı ücretsiz kotası vardır; bu, "sürekli hata"yı büyük ölçüde önler.
+const MODEL_CHAIN = (() => {
+  const base = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-1.5-flash"];
+  const pref = process.env.GEMINI_MODEL;
+  if (!pref) return base;
+  return [pref, ...base.filter((m) => m !== pref)];
+})();
+const endpointFor = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function hasApiKey() {
   return Boolean(process.env.GEMINI_API_KEY);
@@ -22,33 +31,88 @@ function stripFences(s) {
     .trim();
 }
 
-async function callGemini(parts, maxOutputTokens = 4096) {
-  const key = process.env.GEMINI_API_KEY;
-  const res = await fetch(`${ENDPOINT}?key=${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: PERSONA }] },
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.6,
-        maxOutputTokens,
-      },
-    }),
-  });
+function extractJson(text) {
+  const t = stripFences(text);
+  try {
+    return JSON.parse(t);
+  } catch {}
+  // Metnin içindeki ilk JSON bloğunu yakalamayı dene (model fazladan metin eklerse).
+  const m = t.match(/[{[][\s\S]*[}\]]/);
+  if (m) {
+    try {
+      return JSON.parse(m[0]);
+    } catch {}
+  }
+  return null;
+}
 
+async function tryModel(model, parts, maxOutputTokens) {
+  const key = process.env.GEMINI_API_KEY;
+  const generationConfig = { responseMimeType: "application/json", temperature: 0.6, maxOutputTokens };
+  // 2.5 modellerinde "düşünme" JSON çıktısını kırpabiliyor; kapatıyoruz.
+  if (model.startsWith("gemini-2.5")) generationConfig.thinkingConfig = { thinkingBudget: 0 };
+
+  let res;
+  try {
+    res = await fetch(`${endpointFor(model)}?key=${encodeURIComponent(key)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: PERSONA }] },
+        contents: [{ role: "user", parts }],
+        generationConfig,
+      }),
+    });
+  } catch {
+    return { ok: false, retryable: true, msg: "ağ hatası" };
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Gemini API hatası (${res.status}): ${body.slice(0, 200)}`);
+    if (res.status === 400 || res.status === 403) {
+      return { ok: false, fatal: true, status: res.status, msg: body.slice(0, 160) };
+    }
+    const retryable =
+      res.status === 429 || res.status === 500 || res.status === 503 || /overload|unavailable/i.test(body);
+    return { ok: false, retryable, status: res.status, msg: body.slice(0, 160) };
   }
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    return { ok: false, retryable: true, msg: "yanıt okunamadı" };
+  }
+  const text = (data?.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
+  if (!text) {
+    const reason = data?.candidates?.[0]?.finishReason || "boş";
+    return { ok: false, retryable: reason === "MAX_TOKENS", msg: "boş yanıt (" + reason + ")" };
+  }
+  const json = extractJson(text);
+  if (!json) return { ok: false, retryable: true, msg: "biçim hatası" };
+  return { ok: true, value: json };
+}
 
-  const data = await res.json();
-  const text = (data?.candidates?.[0]?.content?.parts || [])
-    .map((p) => p.text || "")
-    .join("");
-  if (!text) throw new Error("Gemini yanıtı boş döndü.");
-  return JSON.parse(stripFences(text));
+// Yoğunlukta otomatik tekrar dener; model olmazsa yedeklere geçer.
+async function callGemini(parts, maxOutputTokens = 4096) {
+  if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY tanımlı değil.");
+  let last = "";
+  for (let i = 0; i < MODEL_CHAIN.length; i++) {
+    const attempts = i === 0 ? 3 : 1; // ilk modeli ısrarla, yedekleri birer kez dene
+    for (let a = 0; a < attempts; a++) {
+      const r = await tryModel(MODEL_CHAIN[i], parts, maxOutputTokens);
+      if (r.ok) return r.value;
+      if (r.fatal) {
+        throw new Error(`Gemini anahtarı geçersiz/yetkisiz (HTTP ${r.status}).`);
+      }
+      last = r.msg || `HTTP ${r.status || "?"}`;
+      if (r.retryable && a < attempts - 1) {
+        await sleep(800 * (a + 1));
+        continue;
+      }
+      break; // sonraki yedek modele geç
+    }
+  }
+  // Buraya gelindiyse tüm modeller başarısız — istemci bunu "yoğunluk" olarak gösterir.
+  throw new Error("Şu an çok yoğunuz (" + String(last).slice(0, 120) + "). Birkaç dakika sonra tekrar dene.");
 }
 
 // 1) Malzeme tanıma + yemek önerileri
