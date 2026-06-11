@@ -415,6 +415,30 @@ app.put("/api/household/:code", (req, res) => {
   res.json(householdView(h));
 });
 
+// ---------------------------------------------------------------------------
+// Topluluk — yayınlanan tarifler
+// ---------------------------------------------------------------------------
+app.get("/api/community", (_req, res) => {
+  res.json({ recipes: db.listCommunity(50) });
+});
+app.post("/api/community", requireAuth, (req, res) => {
+  const { title, ingredients, steps, note } = req.body || {};
+  if (!title || !String(title).trim()) {
+    return res.status(400).json({ error: "Tarif başlığı gerekli." });
+  }
+  db.addCommunityRecipe({
+    userId: req.user.id,
+    userName: req.user.name,
+    recipe: { title, ingredients, steps, note },
+  });
+  res.json({ ok: true, recipes: db.listCommunity(50) });
+});
+app.post("/api/community/:id/like", (req, res) => {
+  const likes = db.likeCommunity(req.params.id);
+  if (likes === null) return res.status(404).json({ error: "Tarif bulunamadı." });
+  res.json({ ok: true, likes });
+});
+
 db.init()
   .catch((e) => console.error("DB init hatası:", e.message))
   .finally(() => {

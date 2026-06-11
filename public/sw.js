@@ -1,6 +1,6 @@
 // Eviko service worker — AĞ ÖNCELİKLİ (çevrimiçiyken her zaman en güncel sürüm).
 // Önceki sürüm önbellek-öncelikliydi ve güncellemeler geç geliyordu; düzeltildi.
-const CACHE = "eviko-v52";
+const CACHE = "eviko-v53";
 const SHELL = [
   "/",
   "/index.html",
