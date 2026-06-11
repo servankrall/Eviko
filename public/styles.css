@@ -2354,6 +2354,7 @@ h2 {
   font-family:inherit; cursor:pointer;
 }
 .season-chip:active { transform:scale(.96); }
+.season-chip.active { border-color:var(--green); background:var(--green-soft); color:var(--green-dark); }
 .weight-ctrl { display:flex; align-items:center; gap:8px; }
 .weight-ctrl input {
   width:90px; border:1.5px solid var(--line); border-radius:999px;
