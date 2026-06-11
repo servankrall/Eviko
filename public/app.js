@@ -58,6 +58,7 @@ let recipeSortTime = false;
 let accent = localStorage.getItem("eviko_accent") || "green";
 let water = store.get("eviko_water", {});
 let favFilter = "";
+let favCollection = ""; // favori koleksiyon filtresi
 let lastAction = null; // hata sonrası "tekrar dene" için
 let lastFailType = null; // "results" | "calories" | "plan"
 let lastResultsData = store.get("eviko_last_results", null);
@@ -1052,6 +1053,32 @@ function toggleFavorite(recipe) {
 function renderFavorites() {
   const list = el("favorites-list");
   el("fav-search").classList.toggle("hidden", favorites.length === 0);
+  // Koleksiyon filtre çubuğu (en az 1 koleksiyon varsa)
+  const collections = [
+    ...new Set(favorites.map((f) => (f.collection || "").trim()).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, "tr"));
+  const colBar = el("fav-collections");
+  if (collections.length) {
+    if (favCollection && !collections.includes(favCollection)) favCollection = "";
+    colBar.classList.remove("hidden");
+    colBar.innerHTML =
+      `<button class="season-chip ${!favCollection ? "active" : ""}" data-col="">Tümü</button>` +
+      collections
+        .map(
+          (c) =>
+            `<button class="season-chip ${favCollection === c ? "active" : ""}" data-col="${escapeHtml(c)}">🗂️ ${escapeHtml(c)}</button>`
+        )
+        .join("");
+    colBar.querySelectorAll("[data-col]").forEach((b) =>
+      b.addEventListener("click", () => {
+        favCollection = b.dataset.col;
+        renderFavorites();
+      })
+    );
+  } else {
+    colBar.classList.add("hidden");
+    favCollection = "";
+  }
   if (favorites.length === 0) {
     list.innerHTML = emptyState("⭐", "Henüz favori tarifin yok.<br>Bir tarifi açıp ⭐ ile kaydet.");
     return;
@@ -1059,7 +1086,11 @@ function renderFavorites() {
   const q = favFilter.trim().toLocaleLowerCase("tr");
   const items = favorites
     .map((f, i) => ({ f, i }))
-    .filter(({ f }) => !q || (f.title || "").toLocaleLowerCase("tr").includes(q));
+    .filter(
+      ({ f }) =>
+        (!q || (f.title || "").toLocaleLowerCase("tr").includes(q)) &&
+        (!favCollection || (f.collection || "") === favCollection)
+    );
   if (items.length === 0) {
     list.innerHTML = '<div class="list-empty">Aramana uygun favori bulunamadı.</div>';
     return;
@@ -1070,14 +1101,27 @@ function renderFavorites() {
       <div class="fav-item">
         <div class="fav-main" data-index="${i}">
           <h3>${escapeHtml(f.title)}</h3>
-          <div class="muted small">${f.durationMinutes ? `⏱ ${f.durationMinutes} dk · ` : ""}${escapeHtml(f.difficulty || "")}</div>
+          <div class="muted small">${f.collection ? `🗂️ ${escapeHtml(f.collection)} · ` : ""}${f.durationMinutes ? `⏱ ${f.durationMinutes} dk · ` : ""}${escapeHtml(f.difficulty || "")}</div>
         </div>
+        <button class="remove" data-tag="${i}" aria-label="Koleksiyona ekle" title="Koleksiyon">🏷️</button>
         <button class="remove" data-remove="${i}" aria-label="Kaldır">🗑️</button>
       </div>`
     )
     .join("");
   list.querySelectorAll(".fav-main").forEach((m) =>
     m.addEventListener("click", () => openRecipeObject(favorites[Number(m.dataset.index)]))
+  );
+  list.querySelectorAll("[data-tag]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const idx = Number(b.dataset.tag);
+      const res = prompt("Koleksiyon adı (boş bırak = kaldır):", favorites[idx].collection || "");
+      if (res === null) return; // iptal
+      const name = res.trim();
+      favorites[idx].collection = name || undefined;
+      store.set("eviko_favorites", favorites);
+      renderFavorites();
+      if (name) toast(`"${name}" koleksiyonuna eklendi 🗂️`);
+    })
   );
   list.querySelectorAll("[data-remove]").forEach((b) =>
     b.addEventListener("click", () => {
