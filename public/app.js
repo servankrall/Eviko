@@ -2128,33 +2128,84 @@ cookModal.addEventListener("click", (e) => {
   if (e.target === cookModal) closeCook();
 });
 
-// ---- Sesle arama ----
-(function setupVoice() {
+// ---- Sesli giriş (ortak, sağlam) ----
+let voiceActive = false;
+async function startVoice(mic, onText) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return; // desteklenmiyorsa mikrofon gizli kalır
+  if (!SR) {
+    toast("Sesli giriş bu cihazda/uygulamada desteklenmiyor; yazarak deneyebilirsin.");
+    return;
+  }
+  if (voiceActive) return;
+  // Mikrofon iznini önden iste — bazı tarayıcı/WebView'larda bu olmadan başlamaz.
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+      s.getTracks().forEach((t) => t.stop());
+    }
+  } catch {
+    toast("Mikrofon izni gerekli. Tarayıcı/uygulama ayarlarından izin ver.");
+    return;
+  }
+  let rec;
+  try {
+    rec = new SR();
+  } catch {
+    toast("Sesli giriş başlatılamadı.");
+    return;
+  }
+  rec.lang = langPref() === "en" ? "en-US" : "tr-TR";
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  voiceActive = true;
+  if (mic) mic.classList.add("listening");
+  toast("Dinliyorum… 🎤");
+  rec.onresult = (e) => {
+    const t = e.results && e.results[0] && e.results[0][0] && e.results[0][0].transcript;
+    if (t) onText(t);
+  };
+  rec.onerror = (e) => {
+    const x = e && e.error;
+    if (x === "not-allowed" || x === "service-not-allowed") toast("Mikrofon izni reddedildi.");
+    else if (x === "no-speech") toast("Ses algılanamadı, tekrar dene.");
+    else if (x === "audio-capture") toast("Mikrofon bulunamadı.");
+  };
+  rec.onend = () => {
+    voiceActive = false;
+    if (mic) mic.classList.remove("listening");
+  };
+  try {
+    rec.start();
+  } catch {
+    voiceActive = false;
+    if (mic) mic.classList.remove("listening");
+  }
+}
+
+// ---- Sesle arama (üst arama kutusu) ----
+(function () {
   const mic = el("search-mic");
   if (!mic) return;
+  mic.classList.remove("hidden"); // her zaman görünür; desteklenmezse tıklayınca açıklar
+  mic.addEventListener("click", () =>
+    startVoice(mic, (t) => {
+      el("search-input").value = t;
+      el("search-form").dispatchEvent(new Event("submit"));
+    })
+  );
+})();
+
+// ---- Sesle malzeme yazma (alt kutu) ----
+(function () {
+  const mic = el("manual-mic");
+  if (!mic) return;
   mic.classList.remove("hidden");
-  let rec = null;
-  mic.addEventListener("click", () => {
-    try {
-      rec = new SR();
-      rec.lang = "tr-TR";
-      rec.interimResults = false;
-      rec.maxAlternatives = 1;
-      mic.classList.add("listening");
-      rec.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        el("search-input").value = text;
-        el("search-form").dispatchEvent(new Event("submit"));
-      };
-      rec.onerror = () => mic.classList.remove("listening");
-      rec.onend = () => mic.classList.remove("listening");
-      rec.start();
-    } catch {
-      mic.classList.remove("listening");
-    }
-  });
+  mic.addEventListener("click", () =>
+    startVoice(mic, (t) => {
+      el("manual-input").value = t;
+      el("manual-form").dispatchEvent(new Event("submit"));
+    })
+  );
 })();
 
 // ---- "Bugün ne pişeyim?" sürpriz ----
@@ -2489,28 +2540,15 @@ async function runAssistant(query) {
   }
 }
 (function setupAssistantVoice() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const mic = el("assistant-mic");
-  if (!SR || !mic) return;
+  if (!mic) return;
   mic.classList.remove("hidden");
-  mic.addEventListener("click", () => {
-    try {
-      const rec = new SR();
-      rec.lang = langPref() === "en" ? "en-US" : "tr-TR";
-      rec.interimResults = false;
-      rec.maxAlternatives = 1;
-      mic.classList.add("listening");
-      rec.onresult = (ev) => {
-        el("assistant-input").value = ev.results[0][0].transcript;
-        el("assistant-form").dispatchEvent(new Event("submit"));
-      };
-      rec.onerror = () => mic.classList.remove("listening");
-      rec.onend = () => mic.classList.remove("listening");
-      rec.start();
-    } catch {
-      mic.classList.remove("listening");
-    }
-  });
+  mic.addEventListener("click", () =>
+    startVoice(mic, (t) => {
+      el("assistant-input").value = t;
+      el("assistant-form").dispatchEvent(new Event("submit"));
+    })
+  );
 })();
 
 // ---- Haftalık beslenme koçluğu ----
