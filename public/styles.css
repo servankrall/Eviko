@@ -2365,6 +2365,22 @@ h2 {
 /* ---------- Davet şablonları ---------- */
 .event-presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
 
+
+/* ---------- Son kullanma (SKT) ---------- */
+.pantry-exp {
+  border:1.5px solid var(--line); border-radius:999px; padding:8px 12px;
+  font-size:.85rem; font-family:inherit; background:#fff; color:var(--ink);
+}
+[data-theme="dark"] .pantry-exp { background:#1d2226; }
+.pantry-warn {
+  background:#fff4e6; color:#8a4b08; border:1px solid #ffe2bf;
+  border-radius:12px; padding:8px 12px; margin:8px 0; font-size:.85rem; line-height:1.6;
+}
+[data-theme="dark"] .pantry-warn { background:#2a2113; color:#ffd8a8; border-color:#4a3a1a; }
+.exp-badge { font-size:.72rem; font-weight:700; color:var(--muted); margin:0 2px; }
+.exp-badge.exp-soon { color:#e8590c; }
+.exp-badge.exp-past { color:#e03131; }
+
 /* ---------- Footer ---------- */
 .footer {
   text-align: center;
