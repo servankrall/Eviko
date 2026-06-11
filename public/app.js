@@ -1357,10 +1357,104 @@ el("btn-share-app").addEventListener("click", async () => {
   } catch {}
 });
 
+// ---- Hatırlatıcılar (su/öğün) — bildirim ----
+async function ensureNotifPermission() {
+  if (!("Notification" in window)) {
+    toast("Bu cihaz bildirimleri desteklemiyor.");
+    return false;
+  }
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") {
+    toast("Bildirim izni reddedilmiş; cihaz ayarlarından açabilirsin.");
+    return false;
+  }
+  try {
+    return (await Notification.requestPermission()) === "granted";
+  } catch {
+    return false;
+  }
+}
+function notify(title, body) {
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready
+        .then((reg) =>
+          reg.showNotification(title, {
+            body,
+            icon: "/icons/icon-192.png",
+            badge: "/icons/icon-192.png",
+            tag: "eviko-reminder",
+            renotify: true,
+          })
+        )
+        .catch(() => {
+          new Notification(title, { body });
+        });
+    } else if ("Notification" in window) {
+      new Notification(title, { body });
+    }
+  } catch {}
+}
+function loadReminderUI() {
+  const r = store.get("eviko_reminders", { water: false, meal: false });
+  if (el("rem-water")) el("rem-water").checked = !!r.water;
+  if (el("rem-meal")) el("rem-meal").checked = !!r.meal;
+}
+async function toggleReminder(kind, on) {
+  const r = store.get("eviko_reminders", { water: false, meal: false });
+  if (on) {
+    const ok = await ensureNotifPermission();
+    if (!ok) {
+      el("rem-" + kind).checked = false;
+      return;
+    }
+  }
+  r[kind] = on;
+  store.set("eviko_reminders", r);
+  toast(on ? "Hatırlatıcı açıldı 🔔" : "Hatırlatıcı kapatıldı");
+}
+el("rem-water").addEventListener("change", (e) => toggleReminder("water", e.target.checked));
+el("rem-meal").addEventListener("change", (e) => toggleReminder("meal", e.target.checked));
+el("rem-test").addEventListener("click", async () => {
+  if (await ensureNotifPermission()) {
+    notify("Eviko 🔔", "Bildirimler çalışıyor! Su ve öğün hatırlatmaların gelecek.");
+    toast("Test bildirimi gönderildi 🔔");
+  }
+});
+// Uygulama açıkken dakikada bir kontrol; saat geldiyse (günde bir kez) bildir.
+function reminderTick() {
+  const r = store.get("eviko_reminders", { water: false, meal: false });
+  if ((!r.water && !r.meal) || !("Notification" in window) || Notification.permission !== "granted") return;
+  const now = new Date();
+  const hh = now.getHours();
+  const fired = store.get("eviko_rem_fired", {});
+  const stamp = (slot) => `${todayKey()}|${slot}`;
+  const fire = (slot, title, body) => {
+    const id = stamp(slot);
+    if (fired[id]) return;
+    fired[id] = true;
+    store.set("eviko_rem_fired", fired);
+    notify(title, body);
+  };
+  if (r.water && hh >= 9 && hh <= 21 && hh % 2 === 1) {
+    fire("water-" + hh, "💧 Su zamanı", "Bir bardak su içmeyi unutma!");
+  }
+  if (r.meal && (hh === 8 || hh === 13 || hh === 19)) {
+    fire(
+      "meal-" + hh,
+      "🍽️ Öğün vakti",
+      hh === 8 ? "Günaydın! Kahvaltı zamanı." : hh === 13 ? "Öğle yemeği zamanı." : "Akşam yemeği zamanı."
+    );
+  }
+}
+loadReminderUI();
+setInterval(reminderTick, 60000);
+setTimeout(reminderTick, 4000);
+
 // ---- Veri yedekleme / geri yükleme (cihazda) ----
 const BACKUP_KEYS = [
   "eviko_favorites", "eviko_my_recipes", "eviko_shopping", "eviko_prefs",
-  "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_pantry_exp", "eviko_diary", "eviko_notes",
+  "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_pantry_exp", "eviko_reminders", "eviko_diary", "eviko_notes",
   "eviko_water", "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
   "eviko_fontsize", "eviko_weights", "eviko_speech_rate",
 ];
