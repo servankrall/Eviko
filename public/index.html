@@ -549,6 +549,14 @@
         <button id="assistant-close" class="modal-close" aria-label="Kapat">×</button>
         <h2>🎙️ Sesli asistan</h2>
         <p class="muted small">Ne istediğini yaz ya da söyle: "akşama 4 kişiye hafif bir şey", "pratik kahvaltılık".</p>
+        <div class="event-presets" id="assistant-presets">
+          <button type="button" class="season-chip" data-q="Hafif ve sağlıklı bir şey">🥗 Hafif</button>
+          <button type="button" class="season-chip" data-q="Doyurucu, tok tutan bir yemek">🔥 Doyurucu</button>
+          <button type="button" class="season-chip" data-q="Tatlı krizi için pratik bir tatlı">🍰 Tatlı</button>
+          <button type="button" class="season-chip" data-q="Sıcacık bir çorba">🍲 Çorba</button>
+          <button type="button" class="season-chip" data-q="10 dakikada hazır çok pratik bir şey">⚡ 10 dk</button>
+          <button type="button" class="season-chip" data-q="Dünden kalanları (ör. pilav, tavuk, ekmek) değerlendiren bir tarif">♻️ Artanlar</button>
+        </div>
         <form id="assistant-form" class="event-form">
           <input id="assistant-input" type="text" placeholder="İsteğini yaz…" autocomplete="off" />
           <button type="button" id="assistant-mic" class="mic-btn hidden" aria-label="Sesle sor">🎤</button>
@@ -722,7 +730,7 @@
       </div>
     </div>
 
-    <footer class="footer muted small">Eviko · sürüm 47 · Claude ile geliştirildi</footer>
+    <footer class="footer muted small">Eviko · sürüm 48 · Claude ile geliştirildi</footer>
 
     <script src="/config.js"></script>
     <script src="/ai.js"></script>

@@ -2463,6 +2463,9 @@ el("assistant-form").addEventListener("submit", (e) => {
   const q = el("assistant-input").value.trim();
   if (q) runAssistant(q);
 });
+assistantModal.querySelectorAll("#assistant-presets .season-chip").forEach((b) =>
+  b.addEventListener("click", () => runAssistant(b.dataset.q))
+);
 async function runAssistant(query) {
   assistantModal.classList.add("hidden");
   lastAction = () => runAssistant(query);
