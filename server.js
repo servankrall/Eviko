@@ -95,7 +95,7 @@ app.post("/api/analyze", async (req, res) => {
   } catch (err) {
     console.error("Analiz hatası:", err);
     res.status(500).json({
-      error: "Fotoğraf analiz edilirken bir sorun oluştu. Lütfen tekrar deneyin.",
+      error: err.message || "Fotoğraf analiz edilirken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
 });
@@ -119,7 +119,7 @@ app.post("/api/analyze-text", async (req, res) => {
   } catch (err) {
     console.error("Metin analizi hatası:", err);
     res.status(500).json({
-      error: "Öneriler hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
+      error: err.message || "Öneriler hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
 });
@@ -144,7 +144,7 @@ app.post("/api/recipe", async (req, res) => {
   } catch (err) {
     console.error("Tarif hatası:", err);
     res.status(500).json({
-      error: "Tarif hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
+      error: err.message || "Tarif hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
 });
@@ -168,7 +168,7 @@ app.post("/api/calories", async (req, res) => {
   } catch (err) {
     console.error("Kalori analizi hatası:", err);
     res.status(500).json({
-      error: "Kalori tahmini yapılırken bir sorun oluştu. Lütfen tekrar deneyin.",
+      error: err.message || "Kalori tahmini yapılırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
 });
@@ -188,7 +188,7 @@ app.post("/api/plan", async (req, res) => {
   } catch (err) {
     console.error("Plan hatası:", err);
     res.status(500).json({
-      error: "Haftalık plan hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
+      error: err.message || "Haftalık plan hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.",
     });
   }
 });
@@ -207,7 +207,7 @@ app.post("/api/substitute", async (req, res) => {
     res.json({ ...result, demo: false });
   } catch (err) {
     console.error("İkame hatası:", err);
-    res.status(500).json({ error: "Alternatif bulunamadı." });
+    res.status(500).json({ error: err.message || "Alternatif bulunamadı." });
   }
 });
 
@@ -225,7 +225,7 @@ app.post("/api/event-plan", async (req, res) => {
     res.json({ ...result, demo: false });
   } catch (err) {
     console.error("Davet planı hatası:", err);
-    res.status(500).json({ error: "Hesaplama yapılamadı. Lütfen tekrar deneyin." });
+    res.status(500).json({ error: err.message || "Hesaplama yapılamadı. Lütfen tekrar deneyin." });
   }
 });
 
@@ -243,7 +243,7 @@ app.post("/api/receipt", async (req, res) => {
     res.json({ ...result, demo: false });
   } catch (err) {
     console.error("Fiş okuma hatası:", err);
-    res.status(500).json({ error: "Fiş okunamadı. Daha net bir fotoğraf deneyin." });
+    res.status(500).json({ error: err.message || "Fiş okunamadı. Daha net bir fotoğraf deneyin." });
   }
 });
 
@@ -261,7 +261,7 @@ app.post("/api/suggest", async (req, res) => {
     res.json({ ...result, demo: false });
   } catch (err) {
     console.error("Öneri hatası:", err);
-    res.status(500).json({ error: "Öneri alınamadı. Lütfen tekrar deneyin." });
+    res.status(500).json({ error: err.message || "Öneri alınamadı. Lütfen tekrar deneyin." });
   }
 });
 
@@ -277,7 +277,7 @@ app.post("/api/coach", async (req, res) => {
     res.json({ ...result, demo: false });
   } catch (err) {
     console.error("Koçluk hatası:", err);
-    res.status(500).json({ error: "Koçluk özeti alınamadı." });
+    res.status(500).json({ error: err.message || "Koçluk özeti alınamadı." });
   }
 });
 
