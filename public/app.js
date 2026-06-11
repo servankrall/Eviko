@@ -1194,7 +1194,7 @@ function renderMyRecipes() {
           r.title
         )}</h3><div class="muted small">${(r.ingredients || []).length} malzeme · ${
           (r.steps || []).length
-        } adım</div></div><button class="remove" data-del="${i}" aria-label="Sil">🗑️</button></div>`
+        } adım</div></div><button class="remove" data-pub="${i}" aria-label="Toplulukta yayınla" title="Yayınla">📢</button><button class="remove" data-del="${i}" aria-label="Sil">🗑️</button></div>`
     )
     .join("");
   box.querySelectorAll("[data-open]").forEach((m) =>
@@ -1203,6 +1203,9 @@ function renderMyRecipes() {
       detectedNames = [];
       openRecipeObject(myRecipes[Number(m.dataset.open)]);
     })
+  );
+  box.querySelectorAll("[data-pub]").forEach((b) =>
+    b.addEventListener("click", () => publishToCommunity(myRecipes[Number(b.dataset.pub)]))
   );
   box.querySelectorAll("[data-del]").forEach((b) =>
     b.addEventListener("click", () => {
@@ -2588,6 +2591,93 @@ el("glossary-close").addEventListener("click", () => glossaryModal.classList.add
 glossaryModal.addEventListener("click", (e) => {
   if (e.target === glossaryModal) glossaryModal.classList.add("hidden");
 });
+
+// ---- Topluluk tarifleri ----
+const communityModal = el("community-modal");
+let communityCache = [];
+el("btn-community").addEventListener("click", openCommunity);
+el("community-close").addEventListener("click", () => communityModal.classList.add("hidden"));
+communityModal.addEventListener("click", (e) => {
+  if (e.target === communityModal) communityModal.classList.add("hidden");
+});
+async function openCommunity() {
+  communityModal.classList.remove("hidden");
+  const box = el("community-list");
+  box.innerHTML = '<p class="muted small">Yükleniyor…</p>';
+  try {
+    const data = await serverJson("/api/community", "GET");
+    communityCache = data.recipes || [];
+    renderCommunity();
+  } catch (err) {
+    box.innerHTML = `<p class="muted small">${escapeHtml(err.message || "Topluluk yüklenemedi.")}</p>`;
+  }
+}
+function renderCommunity() {
+  const box = el("community-list");
+  if (!communityCache.length) {
+    box.innerHTML = emptyState("👨‍👩‍👧", "Henüz paylaşılan tarif yok.<br>İlk paylaşan sen ol! (✍️ Kendi tariflerim → 📢)");
+    return;
+  }
+  box.innerHTML = communityCache
+    .map(
+      (c, i) => `
+      <div class="fav-item">
+        <div class="fav-main" data-c="${i}">
+          <h3>${escapeHtml(c.title)}</h3>
+          <div class="muted small">👤 ${escapeHtml(c.by)} · ${(c.ingredients || []).length} malzeme · ${(c.steps || []).length} adım</div>
+        </div>
+        <button class="remove" data-like="${escapeHtml(c.id)}" aria-label="Beğen" title="Beğen">❤️ ${c.likes || 0}</button>
+      </div>`
+    )
+    .join("");
+  box.querySelectorAll("[data-c]").forEach((m) =>
+    m.addEventListener("click", () => {
+      const c = communityCache[Number(m.dataset.c)];
+      communityModal.classList.add("hidden");
+      detectedNames = [];
+      openRecipeObject({
+        title: c.title,
+        servings: 2,
+        ingredients: c.ingredients || [],
+        steps: c.steps || [],
+        tips: c.note ? [c.note] : [],
+      });
+    })
+  );
+  box.querySelectorAll("[data-like]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      try {
+        const r = await serverJson("/api/community/" + encodeURIComponent(b.dataset.like) + "/like", "POST", {});
+        const c = communityCache.find((x) => x.id === b.dataset.like);
+        if (c) {
+          c.likes = r.likes;
+          renderCommunity();
+        }
+        haptic(8);
+      } catch {}
+    })
+  );
+}
+async function publishToCommunity(recipe) {
+  if (!currentUser) {
+    toast("Yayınlamak için giriş yap.");
+    openAuth();
+    return;
+  }
+  try {
+    await serverJson("/api/community", "POST", {
+      title: recipe.title,
+      ingredients: recipe.ingredients || [],
+      steps: recipe.steps || [],
+      note: recipe.note || "",
+    });
+    toast("Tarifin toplulukta yayınlandı 👨‍👩‍👧");
+    haptic(12);
+  } catch (err) {
+    toast(err.message || "Yayınlanamadı.");
+  }
+}
+
 function renderBadges() {
   const favCount = favorites.length;
   const diaryDays = new Set(diary.map((e) => e.day)).size;

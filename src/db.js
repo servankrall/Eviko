@@ -11,7 +11,7 @@ const DATA_DIR = process.env.EVIKO_DATA_DIR || path.join(__dirname, "..", "data"
 const DB_FILE = path.join(DATA_DIR, "eviko.json");
 
 function emptyDb() {
-  return { users: [], sessions: {}, recipes: {}, comments: [], events: [], households: {} };
+  return { users: [], sessions: {}, recipes: {}, comments: [], events: [], households: {}, community: [] };
 }
 
 let db = emptyDb();
@@ -278,4 +278,46 @@ export function setHouseholdList(code, items) {
   h.updatedAt = Date.now();
   save();
   return h;
+}
+
+// ---- Topluluk: yayınlanan tarifler ----
+export function addCommunityRecipe({ userId, userName, recipe }) {
+  if (!db.community) db.community = [];
+  const r = recipe || {};
+  const item = {
+    id: randomUUID(),
+    by: userName || "Biri",
+    userId: userId || null,
+    title: String(r.title || "Tarif").slice(0, 120),
+    ingredients: Array.isArray(r.ingredients) ? r.ingredients.slice(0, 60) : [],
+    steps: Array.isArray(r.steps) ? r.steps.slice(0, 60) : [],
+    note: String(r.note || "").slice(0, 500),
+    likes: 0,
+    ts: Date.now(),
+  };
+  db.community.unshift(item);
+  if (db.community.length > 1000) db.community = db.community.slice(0, 1000);
+  save();
+  return item;
+}
+export function listCommunity(limit = 50) {
+  return (db.community || [])
+    .slice(0, limit)
+    .map((c) => ({
+      id: c.id,
+      by: c.by,
+      title: c.title,
+      ingredients: c.ingredients || [],
+      steps: c.steps || [],
+      note: c.note || "",
+      likes: c.likes || 0,
+      ts: c.ts,
+    }));
+}
+export function likeCommunity(id) {
+  const c = (db.community || []).find((x) => x.id === id);
+  if (!c) return null;
+  c.likes = (c.likes || 0) + 1;
+  save();
+  return c.likes;
 }
