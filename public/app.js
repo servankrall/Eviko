@@ -48,6 +48,7 @@ let currentSocial = null;
 let currentUser = null;
 let googleClientId = null;
 let pantry = store.get("eviko_pantry", []);
+let pantryExp = store.get("eviko_pantry_exp", {}); // { malzemeAdı: "YYYY-MM-DD" }
 let installPrompt = null;
 let diary = store.get("eviko_diary", []);
 let calGoal = Number(localStorage.getItem("eviko_cal_goal")) || 2000;
@@ -1315,7 +1316,7 @@ el("btn-share-app").addEventListener("click", async () => {
 // ---- Veri yedekleme / geri yükleme (cihazda) ----
 const BACKUP_KEYS = [
   "eviko_favorites", "eviko_my_recipes", "eviko_shopping", "eviko_prefs",
-  "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_diary", "eviko_notes",
+  "eviko_avoid", "eviko_history", "eviko_pantry", "eviko_pantry_exp", "eviko_diary", "eviko_notes",
   "eviko_water", "eviko_cal_goal", "eviko_accent", "eviko_theme", "eviko_lang",
   "eviko_fontsize", "eviko_weights", "eviko_speech_rate",
 ];
@@ -1903,31 +1904,79 @@ el("search-form").addEventListener("submit", (e) => {
 });
 
 // ---- Buzdolabım (kayıtlı malzemeler) ----
+// Son kullanma tarihine kalan gün (gün bazlı); tarih yoksa null.
+function daysLeft(name) {
+  const d = pantryExp[name];
+  if (!d) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const exp = new Date(d + "T00:00:00");
+  if (isNaN(exp)) return null;
+  return Math.round((exp - today) / 86400000);
+}
+function expBadge(days) {
+  if (days === null) return "";
+  if (days < 0) return '<span class="exp-badge exp-past">❗ geçti</span>';
+  if (days === 0) return '<span class="exp-badge exp-soon">⚠️ bugün</span>';
+  if (days === 1) return '<span class="exp-badge exp-soon">⚠️ yarın</span>';
+  if (days <= 3) return `<span class="exp-badge exp-soon">⏳ ${days} gün</span>`;
+  return `<span class="exp-badge">⏳ ${days} gün</span>`;
+}
 function renderPantry() {
   const box = el("pantry-chips");
-  box.innerHTML = pantry
+  // Görüntü sırası: tarihi yakın olanlar önce; orijinal indeks korunur (silme için).
+  const items = pantry
+    .map((p, i) => ({ p, i, d: daysLeft(p) }))
+    .sort((a, b) => {
+      if (a.d === null && b.d === null) return 0;
+      if (a.d === null) return 1;
+      if (b.d === null) return -1;
+      return a.d - b.d;
+    });
+  box.innerHTML = items
     .map(
-      (p, i) =>
-        `<span class="chip"><span>${escapeHtml(p)}</span><button class="chip-x" data-i="${i}" aria-label="Sil">×</button></span>`
+      ({ p, i, d }) =>
+        `<span class="chip"><span>${escapeHtml(p)}</span>${expBadge(d)}<button class="chip-x" data-i="${i}" aria-label="Sil">×</button></span>`
     )
     .join("");
   box.querySelectorAll(".chip-x").forEach((b) =>
     b.addEventListener("click", () => {
+      const name = pantry[Number(b.dataset.i)];
       pantry.splice(Number(b.dataset.i), 1);
+      if (name) delete pantryExp[name];
       store.set("eviko_pantry", pantry);
+      store.set("eviko_pantry_exp", pantryExp);
       renderPantry();
     })
   );
+  // Bitmek üzere olanlar (≤3 gün ya da geçmiş) için uyarı + "bunlarla öner".
+  const expiring = items.filter((x) => x.d !== null && x.d <= 3).map((x) => x.p);
+  const warn = el("pantry-warn");
+  if (expiring.length) {
+    warn.innerHTML =
+      `⏳ Bitmek üzere: <b>${expiring.map(escapeHtml).join(", ")}</b> ` +
+      `<button class="btn btn-ghost small" id="pantry-useup">Bunlarla öner</button>`;
+    warn.classList.remove("hidden");
+    el("pantry-useup").onclick = () => runManual(expiring.join(", "));
+  } else {
+    warn.classList.add("hidden");
+  }
   el("btn-pantry-suggest").classList.toggle("hidden", pantry.length === 0);
 }
 el("pantry-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const v = el("pantry-input").value.trim();
+  const exp = el("pantry-exp").value; // "" ya da YYYY-MM-DD
   if (v && !pantry.some((x) => x.toLocaleLowerCase("tr") === v.toLocaleLowerCase("tr"))) {
     pantry.push(v);
     store.set("eviko_pantry", pantry);
   }
+  if (v && exp) {
+    pantryExp[v] = exp;
+    store.set("eviko_pantry_exp", pantryExp);
+  }
   el("pantry-input").value = "";
+  el("pantry-exp").value = "";
   renderPantry();
 });
 el("btn-pantry-suggest").addEventListener("click", () => {

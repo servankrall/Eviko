@@ -158,11 +158,13 @@
 
         <div id="pantry-box" class="pantry-box">
           <h2>🧊 Buzdolabım</h2>
-          <p class="muted small">Sık kullandığın malzemeleri kaydet; tek dokunuşla onlardan yemek öner.</p>
+          <p class="muted small">Sık kullandığın malzemeleri kaydet; son kullanma tarihi eklersen bozulmadan uyarırım.</p>
           <form id="pantry-form" class="pantry-form">
             <input id="pantry-input" type="text" placeholder="Malzeme ekle (ör. yumurta)" autocomplete="off" />
+            <input id="pantry-exp" type="date" class="pantry-exp" aria-label="Son kullanma (opsiyonel)" />
             <button class="btn btn-ghost" type="submit">Ekle</button>
           </form>
+          <div id="pantry-warn" class="pantry-warn hidden"></div>
           <div id="pantry-chips" class="chips"></div>
           <input id="receipt-input" type="file" accept="image/*" capture="environment" hidden />
           <button id="btn-receipt" class="btn btn-ghost pantry-suggest">📷 Fiş okut, dolaba ekle</button>
@@ -731,7 +733,7 @@
       </div>
     </div>
 
-    <footer class="footer muted small">Eviko · sürüm 49 · Claude ile geliştirildi</footer>
+    <footer class="footer muted small">Eviko · sürüm 50 · Claude ile geliştirildi</footer>
 
     <script src="/config.js"></script>
     <script src="/ai.js"></script>
